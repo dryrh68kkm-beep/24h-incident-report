@@ -464,8 +464,7 @@ body.has-actions{padding-bottom:90px;}
     { key: "reporterName", label: "ผู้แจ้งเหตุ", type: "text" },
     { key: "handlerName", label: "ผู้ดำเนินการ", type: "text" },
     { key: "details", label: "รายละเอียดเพิ่มเติม", type: "textarea" },
-    { key: "actionResult", label: "ผลการดำเนินการ", type: "textarea" },
-    { key: "status", label: "สถานะ", type: "select", options: STATUS_OPTIONS, required: true }
+    { key: "actionResult", label: "ผลการดำเนินการ", type: "textarea" }
   ];
 
   function personTypeField(key) {
@@ -1312,7 +1311,6 @@ var ReportScreen = (function(){
   $("btnToPreview").addEventListener("click", function(){
     if(!record.core.incidentDate || !record.core.incidentTime){ App.toast("กรอกวันที่และเวลาที่เกิดเหตุก่อน"); return; }
     if(!record.core.location){ App.toast("กรอกสถานที่เกิดเหตุก่อน"); return; }
-    if(!record.core.status){ App.toast("เลือกสถานะของเหตุการณ์ก่อน"); return; }
     showPreview();
   });
 
