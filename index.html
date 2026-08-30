@@ -564,8 +564,6 @@ body.has-actions{padding-bottom:90px;}
       icon: "🚗",
       color: "red",
       extra: [
-        { key: "crashPoint", label: "จุดเกิดเหตุ", type: "text" },
-
         { key: "v1Group", label: "รถคันที่ 1", type: "group" },
         { key: "v1Type", label: "ประเภทรถ", type: "text", row: "v1a" },
         { key: "v1Brand", label: "ยี่ห้อ / รุ่น", type: "text", row: "v1a" },
@@ -599,8 +597,17 @@ body.has-actions{padding-bottom:90px;}
       ]
     },
 
-    { id: "fall", label: "ลื่นล้ม", icon: "⚠️", color: "orange", extra: [] },
-    { id: "fight", label: "ทะเลาะวิวาท", icon: "😠", color: "red", extra: [] },
+    {
+      id: "fight", label: "ทะเลาะวิวาท", icon: "😠", color: "red",
+      extra: [
+        { key: "parties", label: "ผู้เกี่ยวข้อง / คู่กรณี", type: "textarea" },
+        { key: "cause", label: "สาเหตุเบื้องต้น", type: "text" },
+        yesnoField("hasInjury", "มีผู้ได้รับบาดเจ็บหรือไม่"),
+        yesnoField("hasCCTV", "มี CCTV หรือไม่"),
+        yesnoField("reportedPolice", "แจ้งตำรวจหรือไม่"),
+        { key: "controlAction", label: "การระงับเหตุ / การดำเนินการ", type: "textarea" }
+      ]
+    },
 
     {
       id: "theft",
@@ -636,7 +643,6 @@ body.has-actions{padding-bottom:90px;}
       icon: "🔥",
       color: "red",
       extra: [
-        { key: "foundPoint", label: "จุดที่พบเหตุ", type: "text" },
         { key: "founder", label: "ผู้พบเหตุ", type: "text" },
         { key: "burningItem", label: "สิ่งที่เกิดการไหม้", type: "text" },
         yesnoField("hasFlame", "มีเปลวไฟหรือไม่"),
@@ -654,14 +660,80 @@ body.has-actions{padding-bottom:90px;}
       ]
     },
 
-    { id: "property_damage", label: "ทรัพย์สินเสียหาย", icon: "📦", color: "orange", extra: [] },
-    { id: "customer", label: "เหตุเกี่ยวกับลูกค้า", icon: "🧑‍🤝‍🧑", color: "orange", extra: [] },
-    { id: "staff", label: "เหตุเกี่ยวกับพนักงาน", icon: "🪪", color: "orange", extra: [] },
-    { id: "electrical", label: "ไฟฟ้า / ระบบอาคารขัดข้อง", icon: "⚡", color: "orange", extra: [] },
-    { id: "dropped", label: "สินค้าหรือทรัพย์สินตกหล่น", icon: "📉", color: "orange", extra: [] },
-    { id: "suspicious", label: "บุคคลต้องสงสัย", icon: "🕵️", color: "orange", extra: [] },
-    { id: "lost_property", label: "พบทรัพย์สินสูญหาย", icon: "🔎", color: "green", extra: [] },
-    { id: "other", label: "อื่น ๆ", icon: "📝", color: "blue", extra: [] }
+    {
+      id: "property_damage", label: "ทรัพย์สินเสียหาย", icon: "📦", color: "orange",
+      extra: [
+        { key: "asset", label: "ทรัพย์สินที่เสียหาย", type: "text" },
+        { key: "damage", label: "ลักษณะความเสียหาย", type: "textarea" },
+        { key: "cause", label: "สาเหตุเบื้องต้น", type: "text" },
+        { key: "action", label: "การแก้ไข / การดำเนินการ", type: "textarea" }
+      ]
+    },
+    {
+      id: "customer", label: "เหตุเกี่ยวกับลูกค้า", icon: "🧑‍🤝‍🧑", color: "orange",
+      extra: [
+        { key: "customerName", label: "ชื่อลูกค้า (ถ้าทราบ)", type: "text" },
+        { key: "issue", label: "เหตุการณ์ / ปัญหาที่เกิดขึ้น", type: "textarea" },
+        { key: "action", label: "การช่วยเหลือ / การดำเนินการ", type: "textarea" }
+      ]
+    },
+    {
+      id: "staff", label: "เหตุเกี่ยวกับพนักงาน", icon: "🪪", color: "orange",
+      extra: [
+        { key: "staffName", label: "ชื่อพนักงาน", type: "text" },
+        { key: "department", label: "แผนก / ฝ่าย", type: "text" },
+        { key: "issue", label: "เหตุการณ์ที่เกิดขึ้น", type: "textarea" },
+        { key: "action", label: "การดำเนินการ", type: "textarea" }
+      ]
+    },
+    {
+      id: "electrical", label: "ไฟฟ้า / ระบบอาคารขัดข้อง", icon: "⚡", color: "orange",
+      extra: [
+        { key: "equipment", label: "อุปกรณ์ / ระบบที่พบปัญหา", type: "text" },
+        { key: "symptom", label: "อาการ / ความผิดปกติที่พบ", type: "textarea" },
+        { key: "cause", label: "สาเหตุเบื้องต้น (ถ้าทราบ)", type: "text" },
+        { key: "action", label: "การควบคุม / การแก้ไข", type: "textarea" },
+        yesnoField("hasInjury", "มีผู้ได้รับบาดเจ็บหรือไม่"),
+        yesnoField("hasCustomerImpact", "มีผลกระทบต่อลูกค้าหรือไม่")
+      ]
+    },
+    {
+      id: "dropped", label: "สินค้าหรือทรัพย์สินตกหล่น", icon: "📉", color: "orange",
+      extra: [
+        { key: "item", label: "สินค้า / ทรัพย์สิน", type: "text" },
+        { key: "quantity", label: "จำนวน", type: "text" },
+        { key: "damage", label: "ความเสียหาย", type: "textarea" },
+        { key: "cause", label: "สาเหตุเบื้องต้น", type: "text" },
+        { key: "action", label: "การดำเนินการ", type: "textarea" }
+      ]
+    },
+    {
+      id: "suspicious", label: "บุคคลต้องสงสัย", icon: "🕵️", color: "orange",
+      extra: [
+        { key: "description", label: "ลักษณะบุคคล", type: "textarea" },
+        { key: "behavior", label: "พฤติกรรมที่พบ", type: "textarea" },
+        yesnoField("hasCCTV", "มี CCTV หรือไม่"),
+        { key: "action", label: "การติดตาม / การดำเนินการ", type: "textarea" }
+      ]
+    },
+    {
+      id: "lost_property", label: "พบทรัพย์สินสูญหาย", icon: "🔎", color: "green",
+      extra: [
+        { key: "item", label: "ทรัพย์สินที่พบ", type: "text" },
+        { key: "foundBy", label: "ผู้พบ", type: "text" },
+        { key: "storage", label: "จุดเก็บรักษา / ผู้รับมอบ", type: "text" },
+        { key: "owner", label: "เจ้าของทรัพย์สิน (ถ้าทราบ)", type: "text" },
+        { key: "action", label: "การดำเนินการ", type: "textarea" }
+      ]
+    },
+    {
+      id: "other", label: "อื่น ๆ", icon: "📝", color: "blue",
+      extra: [
+        { key: "eventName", label: "ชื่อเหตุการณ์", type: "text" },
+        { key: "finding", label: "สิ่งที่ตรวจพบ", type: "textarea" },
+        { key: "action", label: "การดำเนินการ", type: "textarea" }
+      ]
+    }
   ];
 
   function getType(id) {
@@ -960,7 +1032,6 @@ body.has-actions{padding-bottom:90px;}
         return "รถคันที่ " + n + " " + parts.join(" ");
       }
       var findings = joinClauses([
-        has(e.crashPoint) ? "จุดเกิดเหตุอยู่" + withPrefix(e.crashPoint, "บริเวณ") : "",
         veh(1), veh(2),
         has(e.crashType) ? "ลักษณะการชนคือ" + e.crashType : "",
         yn(e.hasCCTV, "จุดเกิดเหตุมีกล้องวงจรปิด", "จุดเกิดเหตุไม่มีกล้องวงจรปิด"),
@@ -990,7 +1061,6 @@ body.has-actions{padding-bottom:90px;}
 
     fire: function (e) {
       var findings = joinClauses([
-        has(e.foundPoint) ? "จุดที่พบเหตุอยู่" + withPrefix(e.foundPoint, "บริเวณ") : "",
         has(e.founder) ? "ผู้พบเหตุคือ" + e.founder : "",
         has(e.burningItem) ? "สิ่งที่เกิดการไหม้คือ" + e.burningItem : "",
         yn(e.hasFlame, "พบเปลวไฟ", "ไม่พบเปลวไฟ"),
