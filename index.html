@@ -557,8 +557,6 @@ body.has-actions{padding-bottom:90px;}
       icon: "🚗",
       color: "red",
       extra: [
-        { key: "crashPoint", label: "จุดเกิดเหตุ", type: "text" },
-
         { key: "v1Group", label: "รถคันที่ 1", type: "group" },
         { key: "v1Type", label: "ประเภทรถ", type: "text", row: "v1a" },
         { key: "v1Brand", label: "ยี่ห้อ / รุ่น", type: "text", row: "v1a" },
@@ -592,7 +590,6 @@ body.has-actions{padding-bottom:90px;}
       ]
     },
 
-    { id: "fall", label: "ลื่นล้ม", icon: "⚠️", color: "orange", extra: [] },
     { id: "fight", label: "ทะเลาะวิวาท", icon: "😠", color: "red", extra: [] },
 
     {
@@ -629,7 +626,6 @@ body.has-actions{padding-bottom:90px;}
       icon: "🔥",
       color: "red",
       extra: [
-        { key: "foundPoint", label: "จุดที่พบเหตุ", type: "text" },
         { key: "founder", label: "ผู้พบเหตุ", type: "text" },
         { key: "burningItem", label: "สิ่งที่เกิดการไหม้", type: "text" },
         yesnoField("hasFlame", "มีเปลวไฟหรือไม่"),
@@ -942,7 +938,6 @@ body.has-actions{padding-bottom:90px;}
         return "รถคันที่ " + n + " " + parts.join(" ");
       }
       var findings = joinClauses([
-        has(e.crashPoint) ? "จุดเกิดเหตุอยู่" + withPrefix(e.crashPoint, "บริเวณ") : "",
         veh(1), veh(2),
         has(e.crashType) ? "ลักษณะการชนคือ" + e.crashType : "",
         has(e.damage1) ? "ความเสียหายรถคันที่ 1 " + e.damage1 : "",
@@ -966,7 +961,6 @@ body.has-actions{padding-bottom:90px;}
 
     fire: function (e) {
       var findings = joinClauses([
-        has(e.foundPoint) ? "จุดที่พบเหตุอยู่" + withPrefix(e.foundPoint, "บริเวณ") : "",
         has(e.founder) ? "ผู้พบเหตุคือ" + e.founder : "",
         has(e.burningItem) ? "สิ่งที่เกิดการไหม้คือ" + e.burningItem : "",
         yn(e.hasFlame, "พบเปลวไฟ", "ไม่พบเปลวไฟ"),
