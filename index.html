@@ -1085,6 +1085,132 @@ body.has-actions{padding-bottom:90px;}
       };
     },
 
+    fight: function (e) {
+      var findings = joinClauses([
+        has(e.parties) ? "ผู้เกี่ยวข้อง " + e.parties : "",
+        has(e.cause) ? "สาเหตุเบื้องต้น " + e.cause : "",
+        yn(e.hasCCTV, "มีกล้องวงจรปิดบันทึกภาพไว้", "ไม่มีกล้องวงจรปิด")
+      ]);
+      var actions = joinClauses([
+        has(e.controlAction) ? e.controlAction : "",
+        yn(e.reportedPolice, "ได้ประสานเจ้าหน้าที่ตำรวจ", "ไม่ได้แจ้งตำรวจ")
+      ]);
+      var impact = yn(e.hasInjury, "มีผู้ได้รับบาดเจ็บ", "ไม่มีผู้ได้รับบาดเจ็บ");
+      return { desc:"เกิดเหตุทะเลาะวิวาท", findings:findings, actions:actions, impact:impact, cause:null, causeApplicable:false };
+    },
+
+    property_damage: function (e) {
+      return {
+        desc: "พบทรัพย์สินเสียหาย",
+        findings: joinClauses([
+          has(e.asset) ? "ทรัพย์สินที่เสียหายคือ" + e.asset : "",
+          has(e.damage) ? "ลักษณะความเสียหาย " + e.damage : ""
+        ]),
+        actions: has(e.action) ? e.action : "",
+        impact: "",
+        cause: e.cause,
+        causeApplicable: true
+      };
+    },
+
+    customer: function (e) {
+      return {
+        desc: "เหตุเกี่ยวกับลูกค้า",
+        findings: joinClauses([
+          has(e.customerName) ? "ลูกค้าชื่อ" + e.customerName : "",
+          has(e.issue) ? e.issue : ""
+        ]),
+        actions: has(e.action) ? e.action : "",
+        impact: "",
+        cause:null, causeApplicable:false
+      };
+    },
+
+    staff: function (e) {
+      return {
+        desc: "เหตุเกี่ยวกับพนักงาน",
+        findings: joinClauses([
+          has(e.staffName) ? "พนักงานชื่อ" + e.staffName : "",
+          has(e.department) ? "ปฏิบัติงาน" + e.department : "",
+          has(e.issue) ? e.issue : ""
+        ]),
+        actions: has(e.action) ? e.action : "",
+        impact: "",
+        cause:null, causeApplicable:false
+      };
+    },
+
+    electrical: function (e) {
+      return {
+        desc: "ระบบไฟฟ้า/อาคารขัดข้อง",
+        findings: joinClauses([
+          has(e.equipment) ? "อุปกรณ์หรือระบบที่พบปัญหาคือ" + e.equipment : "",
+          has(e.symptom) ? "พบความผิดปกติ " + e.symptom : ""
+        ]),
+        actions: has(e.action) ? e.action : "",
+        impact: joinClauses([
+          yn(e.hasInjury, "มีผู้ได้รับบาดเจ็บ", "ไม่มีผู้ได้รับบาดเจ็บ"),
+          yn(e.hasCustomerImpact, "มีผลกระทบต่อลูกค้าที่มาใช้บริการ", "ไม่มีผลกระทบต่อลูกค้าที่มาใช้บริการ")
+        ]),
+        cause:e.cause, causeApplicable:true
+      };
+    },
+
+    dropped: function (e) {
+      return {
+        desc: "สินค้าหรือทรัพย์สินตกหล่น",
+        findings: joinClauses([
+          has(e.item) ? "รายการที่เกี่ยวข้องคือ" + e.item : "",
+          has(e.quantity) ? "จำนวน " + e.quantity : "",
+          has(e.damage) ? "พบความเสียหาย " + e.damage : ""
+        ]),
+        actions: has(e.action) ? e.action : "",
+        impact:"",
+        cause:e.cause, causeApplicable:true
+      };
+    },
+
+    suspicious: function (e) {
+      return {
+        desc: "พบบุคคลต้องสงสัย",
+        findings: joinClauses([
+          has(e.description) ? "ลักษณะบุคคล " + e.description : "",
+          has(e.behavior) ? "พบพฤติกรรม " + e.behavior : "",
+          yn(e.hasCCTV, "มีกล้องวงจรปิดบันทึกภาพไว้", "ไม่มีกล้องวงจรปิด")
+        ]),
+        actions: has(e.action) ? e.action : "",
+        impact:"",
+        cause:null, causeApplicable:false
+      };
+    },
+
+    lost_property: function (e) {
+      return {
+        desc: "พบทรัพย์สินสูญหาย",
+        findings: joinClauses([
+          has(e.item) ? "ทรัพย์สินที่พบคือ" + e.item : "",
+          has(e.foundBy) ? "ผู้พบคือ" + e.foundBy : "",
+          has(e.owner) ? "ทราบเจ้าของคือ" + e.owner : ""
+        ]),
+        actions: joinClauses([
+          has(e.storage) ? "นำเก็บรักษาไว้ที่" + e.storage : "",
+          has(e.action) ? e.action : ""
+        ]),
+        impact:"",
+        cause:null, causeApplicable:false
+      };
+    },
+
+    other: function (e) {
+      return {
+        desc: has(e.eventName) ? e.eventName : "เหตุการณ์อื่น ๆ",
+        findings: has(e.finding) ? e.finding : "",
+        actions: has(e.action) ? e.action : "",
+        impact:"",
+        cause:null, causeApplicable:false
+      };
+    },
+
     theft: function (e) {
       var personLabel = optLabel(opts().PERSON_TYPE_OPTIONS, e.personType);
       var admitLabel = optLabel([{ value: "admit", label: "ยอมรับการกระทำ" }, { value: "deny", label: "ปฏิเสธการกระทำ" }], e.admitOrDeny);
