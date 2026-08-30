@@ -533,10 +533,15 @@ body.has-actions{padding-bottom:90px;}
       color: "red",
       extra: [
         { key: "patientName", label: "ชื่อผู้ป่วย", type: "text" },
-        { key: "gender", label: "เพศ", type: "select", options: GENDER_OPTIONS, row: "p1" },
-        { key: "approxAge", label: "อายุโดยประมาณ", type: "number", unit: "ปี", row: "p1" },
         personTypeField(),
+        { key: "gender", label: "เพศ", type: "select", options: GENDER_OPTIONS, row: "p1" },
+        { key: "approxAge", label: "อายุ", type: "number", unit: "ปี", row: "p1" },
+        { key: "workDuration", label: "อายุงาน", type: "text", row: "p2", showIf: { field: "personType", equals: "staff" } },
+        { key: "department", label: "แผนก", type: "text", row: "p2", showIf: { field: "personType", equals: "staff" } },
+        { key: "division", label: "ฝ่าย", type: "text", row: "p3", showIf: { field: "personType", equals: "staff" } },
+        { key: "shiftStartTime", label: "เวลาเริ่มปฏิบัติงาน", type: "time", row: "p3", showIf: { field: "personType", equals: "staff" } },
         { key: "symptoms", label: "อาการที่พบ", type: "textarea" },
+        { key: "symptomsExtra", label: "อาการร่วม", type: "textarea" },
         {
           key: "consciousness", label: "ระดับการรู้สึกตัว", type: "select",
           options: [
@@ -546,15 +551,22 @@ body.has-actions{padding-bottom:90px;}
           ]
         },
         yesnoField("canTalk", "สามารถพูดคุยได้หรือไม่"),
-        yesnoField("hasWound", "มีบาดแผลหรือไม่"),
-        yesnoField("hasBleeding", "มีเลือดออกหรือไม่"),
-        { key: "chronicDisease", label: "โรคประจำตัว (ถ้าทราบ)", type: "text" },
+        { key: "checkedBy", label: "หน่วยงานที่เข้าตรวจอาการ", type: "text" },
+        { key: "checkResult", label: "ผลตรวจเบื้องต้น", type: "textarea" },
+        { key: "bloodPressure", label: "ค่าความดัน (ถ้ามี)", type: "text", row: "p4" },
+        { key: "heartRate", label: "อัตราการเต้นหัวใจ (ถ้ามี)", type: "text", row: "p4" },
         { key: "firstAid", label: "การปฐมพยาบาล", type: "textarea" },
-        yesnoField("calledAmbulance", "เรียกรถพยาบาลหรือไม่"),
-        { key: "respondUnit", label: "หน่วยงานที่เข้าช่วยเหลือ", type: "text" },
-        { key: "hospital", label: "โรงพยาบาลที่นำส่ง", type: "text" },
-        yesnoField("relativeReceived", "ญาติมารับหรือไม่"),
-        { key: "resultAfterHelp", label: "ผลหลังช่วยเหลือ", type: "textarea" }
+        { key: "advice", label: "คำแนะนำจากผู้ตรวจ", type: "textarea" },
+        { key: "priorEvent", label: "เหตุการณ์/อาหาร/กิจกรรมก่อนเกิดอาการ", type: "textarea" },
+        { key: "symptomStartTime", label: "เวลาเริ่มมีอาการ", type: "time" },
+        yesnoField("relativeReceived", "มีญาติมารับหรือไม่"),
+        { key: "relativeReceivedTime", label: "เวลาญาติมารับ", type: "time", showIf: { field: "relativeReceived", equals: "yes" } },
+        yesnoField("sentHospital", "นำส่งโรงพยาบาลหรือไม่"),
+        { key: "hospital", label: "โรงพยาบาล", type: "text", showIf: { field: "sentHospital", equals: "yes" } },
+        { key: "dutyNamePatient", label: "ชื่อ Duty ที่รับทราบ", type: "text", row: "p5" },
+        { key: "dutyPosition", label: "ตำแหน่ง Duty", type: "text", row: "p5" },
+        { key: "dutyShift", label: "รอบ Duty", type: "text" },
+        { key: "escalateTo", label: "ผู้ที่ต้องประสานแจ้งต่อ (เช่น C8)", type: "text" }
       ]
     },
 
@@ -980,39 +992,77 @@ body.has-actions{padding-bottom:90px;}
     },
 
     patient: function (e) {
+      var isStaff = e.personType === "staff";
       var personLabel = optLabel(opts().PERSON_TYPE_OPTIONS, e.personType);
-      var genderLabel = optLabel(opts().GENDER_OPTIONS, e.gender);
+
+      /* ชื่อประเภทบุคคล+แผนก ใช้ทั้งในหัวข้อและย่อหน้าเปิด เช่น "พนักงานแผนก FF" */
+      var hasDept = isStaff && has(e.department);
+      var personPhrase = has(personLabel) ? personLabel + (hasDept ? "แผนก " + e.department : "") : "";
+      var combinedSymptoms = has(e.symptoms) && has(e.symptomsExtra) ? e.symptoms + "และ" + e.symptomsExtra : (e.symptoms || e.symptomsExtra || "");
+      var symptomLead = hasDept ? " มีอาการ" : "มีอาการ"; // เว้นวรรคก่อน "มีอาการ" เฉพาะเมื่อจบวลีด้วยชื่อแผนกภาษาอังกฤษ
+
+      var desc = has(personPhrase) && has(combinedSymptoms) ? personPhrase + symptomLead + combinedSymptoms
+        : (has(personPhrase) ? personPhrase : (has(combinedSymptoms) ? "พบผู้ป่วยมีอาการ" + combinedSymptoms : "พบผู้ป่วย/เจ็บป่วย"));
+      var openingDesc = has(personPhrase) ? "มี" + desc : desc;
+
+      /* ย่อหน้าตรวจสอบ: พบ[บุคคล]ทราบชื่อ... มีอาการ... จึงได้ประสาน...ตรวจ จากการตรวจพบว่า... */
       var consLabel = optLabel([{ value: "alert", label: "รู้สึกตัวดี" }, { value: "drowsy", label: "ซึมลง" }, { value: "unconscious", label: "ไม่รู้สึกตัว" }], e.consciousness);
-
-      var nameBit = has(e.patientName) ? "ผู้ป่วยชื่อ" + e.patientName : "";
-      var descBits = [];
-      if (has(genderLabel)) descBits.push("เพศ" + genderLabel);
-      if (has(e.approxAge)) descBits.push("อายุประมาณ " + e.approxAge + " ปี");
-      if (descBits.length) nameBit += (nameBit ? " (" : "ผู้ป่วย(") + descBits.join(" ") + ")";
-      if (has(personLabel)) nameBit += (nameBit ? " เป็น" : "เป็น") + personLabel;
-
+      var personClause = has(personLabel) ? personLabel + (has(e.patientName) ? "ทราบชื่อ " + e.patientName : "") : (has(e.patientName) ? "ทราบชื่อ " + e.patientName : "");
       var findings = joinClauses([
-        nameBit,
-        has(e.symptoms) ? "มีอาการ" + e.symptoms : "",
+        personClause,
+        has(e.approxAge) ? "อายุ " + e.approxAge + " ปี" : "",
+        isStaff && has(e.workDuration) ? "อายุงาน " + e.workDuration : "",
+        isStaff && has(e.department) ? "ปฏิบัติงานแผนก " + e.department : "",
+        isStaff && has(e.division) ? "ฝ่าย " + e.division : "",
+        has(combinedSymptoms) ? "มีอาการ" + combinedSymptoms : "",
         has(consLabel) ? "ระดับการรู้สึกตัว" + consLabel : "",
-        yn(e.canTalk, "สามารถพูดคุยโต้ตอบได้", "ไม่สามารถพูดคุยโต้ตอบได้"),
-        yn(e.hasWound, "พบบาดแผล", "ไม่พบบาดแผล"),
-        yn(e.hasBleeding, "มีเลือดออก", "ไม่มีเลือดออก"),
-        has(e.chronicDisease) ? "มีโรคประจำตัวคือ" + e.chronicDisease : ""
+        yn(e.canTalk, "สามารถพูดคุยโต้ตอบได้", "ไม่สามารถพูดคุยโต้ตอบได้")
       ]);
+
+      var vitals = joinClauses([
+        has(e.bloodPressure) ? "ความดันโลหิต " + e.bloodPressure : "",
+        has(e.heartRate) ? "อัตราการเต้นของหัวใจ " + e.heartRate : ""
+      ]);
+      var checkClause = joinClauses([e.checkResult, vitals]);
       var actions = joinClauses([
-        has(e.firstAid) ? "ให้การปฐมพยาบาลเบื้องต้นโดย" + e.firstAid : "",
-        yn(e.calledAmbulance, "เรียกรถพยาบาล", "ไม่ได้เรียกรถพยาบาล"),
-        has(e.respondUnit) ? "ประสาน" + e.respondUnit + "เข้าช่วยเหลือ" : "",
-        has(e.hospital) ? "นำส่ง" + withPrefix(e.hospital, "โรงพยาบาล") : ""
+        has(e.checkedBy) ? "จึงได้ประสาน" + e.checkedBy + "เข้ามาตรวจอาการเบื้องต้น" : "",
+        has(checkClause) ? "จากการตรวจพบว่า" + checkClause : ""
       ]);
-      var impact = joinClauses([
-        yn(e.relativeReceived, "มีญาติมารับตัวกลับแล้ว", "ยังไม่มีญาติมารับตัว"),
-        has(e.resultAfterHelp) ? "ผลหลังการช่วยเหลือ" + e.resultAfterHelp : ""
+
+      /* ย่อหน้าประวัติก่อนเกิดอาการ */
+      var priorClauses = joinClauses([
+        has(e.shiftStartTime) ? "ก่อนเข้าปฏิบัติงานช่วงเวลาประมาณ " + e.shiftStartTime + " น." : "",
+        has(e.priorEvent) ? (isStaff ? "พนักงานได้" : "ผู้ป่วยได้") + e.priorEvent : "",
+        has(e.symptomStartTime) ? "เริ่มมีอาการดังกล่าวเมื่อเวลาประมาณ " + e.symptomStartTime + " น." : ""
       ]);
+      var priorParagraph = has(priorClauses) ? ("จากการสอบถาม" + (isStaff ? "พนักงาน" : "ผู้ป่วย") + "เบื้องต้น ทราบว่า" + priorClauses) : "";
+
+      /* ย่อหน้าการปฐมพยาบาล + ญาติ/โรงพยาบาล */
+      var firstAidClauses = joinClauses([
+        has(e.firstAid) ? "ได้ทำการปฐมพยาบาล" + (has(e.checkedBy) ? "โดย" + e.checkedBy : "") : "",
+        has(e.advice) ? "และแนะนำให้" + e.advice : "",
+        has(e.checkResult) ? "เนื่องจาก" + e.checkResult : ""
+      ]);
+      var followUpClauses = joinClauses([
+        yn(e.sentHospital, has(e.hospital) ? "ทางสาขาได้นำส่ง" + withPrefix(e.hospital, "โรงพยาบาล") : "ทางสาขาได้นำส่งโรงพยาบาล", ""),
+        yn(e.relativeReceived, "ทางสาขาได้ประสานญาติของ" + (isStaff ? "พนักงาน" : "ผู้ป่วย") + "ให้เข้ามารับทราบอาการ" + (has(e.relativeReceivedTime) ? " และรับตัวกลับบ้านในเวลาประมาณ " + e.relativeReceivedTime + " น." : ""), "")
+      ]);
+      var firstAidParagraph = has(firstAidClauses) ? ("เบื้องต้น " + firstAidClauses + (has(followUpClauses) ? " " + followUpClauses : "")) : followUpClauses;
+
+      /* ย่อหน้าปิด: แจ้ง Duty */
+      var dutyClause = joinClauses([e.dutyNamePatient, e.dutyPosition, e.dutyShift]);
+      var closingText = has(dutyClause)
+        ? ("จากเหตุการณ์ดังกล่าว ทางฝ่ายป้องกันฯ ได้แจ้ง" + dutyClause + " รับทราบเหตุการณ์ที่เกิดขึ้น" +
+          (has(e.escalateTo) ? " พร้อมประสานแจ้ง " + e.escalateTo : "") +
+          " และจัดทำรายงานเหตุ 24 ชม. ต่อไปครับ รายละเอียดจะแจ้งให้ทราบต่อไปครับ")
+        : "";
+
       return {
-        desc: "พบผู้ป่วย/เจ็บป่วย" + (has(personLabel) ? "เป็น" + personLabel : ""),
-        findings: findings, actions: actions, impact: impact,
+        desc: desc, openingDesc: openingDesc, suppressLocation: true,
+        investigationIntro: "ทางฝ่ายป้องกันฯ จึงได้รุดไปตรวจสอบที่เกิดเหตุทันที พบ",
+        findings: findings, actions: actions, actionsStandalone: true,
+        customParagraphs: [priorParagraph, firstAidParagraph],
+        closingText: closingText,
         cause: null, causeApplicable: false
       };
     },
@@ -1254,10 +1304,11 @@ body.has-actions{padding-bottom:90px;}
     var built = builder ? builder(e) : defaultBuilt(typeLabel);
 
     var desc = built.desc || typeLabel;
+    var openingDesc = built.openingDesc || desc;
     var findings = joinClauses([built.findings, c.details]);
     var actions = built.actions || "";
     var impact = joinClauses([built.impact, c.actionResult]);
-    var locClause = has(c.location) ? withPrefix(c.location, "บริเวณ") : "";
+    var locClause = (!built.suppressLocation && has(c.location)) ? withPrefix(c.location, "บริเวณ") : "";
 
     var lines = [];
 
@@ -1272,7 +1323,7 @@ body.has-actions{padding-bottom:90px;}
       open += " วันที่ " + (has(c.incidentDate) ? thaiDate(c.incidentDate) : "") +
         (has(c.incidentTime) ? " เวลาประมาณ " + c.incidentTime + " น." : "");
     }
-    open += " ทางฝ่ายป้องกันฯ ได้รับแจ้ง" + (has(c.reporterName) ? "จาก" + c.reporterName + " " : "") + "ว่า" + desc + locClause;
+    open += " ทางฝ่ายป้องกันฯ ได้รับแจ้ง" + (has(c.reporterName) ? "จาก" + c.reporterName + " " : "") + "ว่า" + openingDesc + locClause;
     lines.push(open);
     lines.push("");
 
@@ -1280,27 +1331,39 @@ body.has-actions{padding-bottom:90px;}
     var intro = built.investigationIntro || ("ทางฝ่ายป้องกันฯ ได้รุดไปตรวจสอบที่เกิดเหตุทันที จากการตรวจสอบ" + (locClause ? locClause + " " : "") + "พบว่า");
     var investigateLine = "";
     if (has(findings)) investigateLine = intro + findings;
-    if (has(actions)) investigateLine += (investigateLine ? " " : "ทางฝ่ายป้องกันฯ ได้รุดไปตรวจสอบที่เกิดเหตุทันที ") + "จึงได้ทำการ" + actions;
+    if (has(actions)) {
+      if (built.actionsStandalone) {
+        investigateLine += (investigateLine ? " " : intro.replace(/(จากการตรวจสอบ.*)?(พบว่า|พบ)$/, "").trim() + " ") + actions;
+      } else {
+        investigateLine += (investigateLine ? " " : "ทางฝ่ายป้องกันฯ ได้รุดไปตรวจสอบที่เกิดเหตุทันที ") + "จึงได้ทำการ" + actions;
+      }
+    }
     if (investigateLine) {
       lines.push(investigateLine);
       lines.push("");
     }
 
-    /* 4. สาเหตุเบื้องต้น (เฉพาะประเภทที่มีแนวคิดเรื่องสาเหตุ) */
-    if (built.causeApplicable) {
-      lines.push("เบื้องต้น " + (has(built.cause) ? "คาดว่า" + built.cause : "ยังไม่สามารถระบุสาเหตุที่แน่ชัดได้ และอยู่ระหว่างการตรวจสอบจากผู้เกี่ยวข้อง"));
-      lines.push("");
+    /* 4. ย่อหน้าเสริมเฉพาะประเภท (เช่น ประวัติก่อนเกิดอาการ / การปฐมพยาบาล) แทนที่สาเหตุ+ผลกระทบมาตรฐาน */
+    if (built.customParagraphs) {
+      built.customParagraphs.forEach(function (p) {
+        if (has(p)) { lines.push(p); lines.push(""); }
+      });
+    } else {
+      /* 4ก. สาเหตุเบื้องต้น (เฉพาะประเภทที่มีแนวคิดเรื่องสาเหตุ) */
+      if (built.causeApplicable) {
+        lines.push("เบื้องต้น " + (has(built.cause) ? "คาดว่า" + built.cause : "ยังไม่สามารถระบุสาเหตุที่แน่ชัดได้ และอยู่ระหว่างการตรวจสอบจากผู้เกี่ยวข้อง"));
+        lines.push("");
+      }
+      /* 4ข. ผลกระทบ / ผู้บาดเจ็บ / ความเสียหาย */
+      if (has(impact)) {
+        lines.push("จากเหตุการณ์ดังกล่าว " + impact);
+        lines.push("");
+      }
     }
 
-    /* 5. ผลกระทบ / ผู้บาดเจ็บ / ความเสียหาย */
-    if (has(impact)) {
-      lines.push("จากเหตุการณ์ดังกล่าว " + impact);
-      lines.push("");
-    }
-
-    /* 6. แจ้ง Duty / ปิดท้าย */
-    lines.push("จากเหตุการณ์ที่เกิดขึ้น ได้แจ้ง" + (has(c.dutyName) ? c.dutyName + " " : "ผู้เกี่ยวข้อง") +
-      "รับทราบเหตุการณ์ที่เกิดขึ้น และจัดทำรายงานเหตุ 24 ชม. ต่อไปครับ รายละเอียดจะแจ้งทางเมลให้ทราบต่อไปครับ");
+    /* 5. แจ้ง Duty / ปิดท้าย */
+    lines.push(built.closingText || ("จากเหตุการณ์ที่เกิดขึ้น ได้แจ้ง" + (has(c.dutyName) ? c.dutyName + " " : "ผู้เกี่ยวข้อง") +
+      "รับทราบเหตุการณ์ที่เกิดขึ้น และจัดทำรายงานเหตุ 24 ชม. ต่อไปครับ รายละเอียดจะแจ้งทางเมลให้ทราบต่อไปครับ"));
 
     return lines.join("\n");
   }
@@ -1483,10 +1546,28 @@ var ReportScreen = (function(){
     }
   }
 
-  function bindFieldEvents(container){
+  /* ฟิลด์แบบมีเงื่อนไข: f.showIf = {field:"personType", equals:"staff"} */
+  function fieldVisible(f, dataObj){
+    if(!f.showIf) return true;
+    return dataObj[f.showIf.field] === f.showIf.equals;
+  }
+  function visibleFields(fields, dataObj){
+    return fields.filter(function(f){ return fieldVisible(f, dataObj); });
+  }
+  function controllerKeys(fields){
+    var set = {};
+    fields.forEach(function(f){ if(f.showIf) set[f.showIf.field] = true; });
+    return set;
+  }
+
+  function bindFieldEvents(container, ctrlKeys, onCtrlChange){
+    ctrlKeys = ctrlKeys || {};
     container.querySelectorAll("input,textarea,select").forEach(function(el){
       el.addEventListener("input", onFieldChange);
-      el.addEventListener("change", onFieldChange);
+      el.addEventListener("change", function(e){
+        onFieldChange(e);
+        if(ctrlKeys[el.dataset.key] && onCtrlChange) onCtrlChange();
+      });
     });
     container.querySelectorAll(".ynrow").forEach(function(row){
       row.querySelectorAll(".ynbtn").forEach(function(btn){
@@ -1496,6 +1577,7 @@ var ReportScreen = (function(){
           record[scope][key] = (cur === val) ? "" : val;
           row.querySelectorAll(".ynbtn").forEach(function(b){ b.classList.toggle("on", b.dataset.val === record[scope][key]); });
           autosave();
+          if(ctrlKeys[key] && onCtrlChange) onCtrlChange();
         });
       });
     });
@@ -1525,13 +1607,18 @@ var ReportScreen = (function(){
     bindFieldEvents(coreBox);
 
     var extraCard = $("extraCard"), extraBox = $("extraFields");
-    extraBox.innerHTML = "";
     if(typeDef.extra && typeDef.extra.length){
       extraCard.style.display = "";
       $("extraTitle").innerHTML = "รายละเอียด"+App.escapeHtml(typeDef.label)+"<span class='sub'>ไม่ต้องกรอกทุกช่อง กรอกเท่าที่ทราบ</span>";
-      renderRowGroup(typeDef.extra, "extra", record.extra, extraBox);
-      bindFieldEvents(extraBox);
+      var ctrlKeys = controllerKeys(typeDef.extra);
+      var renderExtra = function(){
+        extraBox.innerHTML = "";
+        renderRowGroup(visibleFields(typeDef.extra, record.extra), "extra", record.extra, extraBox);
+        bindFieldEvents(extraBox, ctrlKeys, renderExtra);
+      };
+      renderExtra();
     } else {
+      extraBox.innerHTML = "";
       extraCard.style.display = "none";
     }
   }
