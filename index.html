@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>24H Incident Report</title>
+<style>
+:root{
+  color-scheme: light only;
+
+  --navy:#1B3A6B;
+  --navy-dark:#122A4E;
+  --navy-soft:#EAF0F9;
+  --bg:#F4F6F8;
+  --card:#FFFFFF;
+  --field:#F7F8FA;
+  --border:#E2E6EC;
+  --text:#1A1F29;
+  --label:#4B5563;
+  --muted:#8A93A3;
+
+  --red:#D0342C;
+  --red-soft:#FDECEB;
+  --orange:#C9700B;
+  --orange-soft:#FCF1E2;
+  --green:#1E7D46;
+  --green-soft:#E9F5EE;
+  --blue:#1D62C7;
+  --blue-soft:#EAF1FC;
+
+  --sans:"Leelawadee UI",Tahoma,Arial,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
+  font-size:15px;line-height:1.55;
+}
+h1,h2,h3{margin:0;color:var(--text);}
+a{color:inherit;text-decoration:none;}
+button{font-family:inherit;}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 90px;}
+
+/* ===== HEADER ===== */
+.topbar{
+  background:var(--navy);color:#fff;
+  padding:calc(14px + env(safe-area-inset-top)) 16px 16px;
+}
+.topbar-in{max-width:720px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.topbar h1{font-size:17px;font-weight:700;}
+.topbar .sub{font-size:11.5px;color:rgba(255,255,255,.6);margin-top:2px;}
+.topbar nav{display:flex;gap:6px;}
+.topbar nav a{
+  font-size:12.5px;font-weight:600;padding:8px 12px;border-radius:8px;
+  background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);
+}
+.topbar nav a.on{background:#fff;color:var(--navy);}
+
+/* ===== DASHBOARD STATS ===== */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px;}
+.stat{
+  background:var(--card);border-radius:12px;padding:12px 8px;text-align:center;
+  box-shadow:0 1px 2px rgba(20,30,50,.05);
+}
+.stat b{display:block;font-size:22px;font-weight:800;color:var(--navy);line-height:1.1;}
+.stat span{display:block;font-size:10.5px;color:var(--muted);margin-top:4px;line-height:1.3;}
+@media(max-width:400px){ .stats{grid-template-columns:repeat(2,1fr);} }
+
+.section-title{font-size:14px;font-weight:700;color:var(--label);margin:22px 0 10px;display:flex;justify-content:space-between;align-items:center;}
+.section-title a{font-size:12.5px;font-weight:600;color:var(--navy);}
+
+/* ===== TYPE GRID (large tap cards) ===== */
+.typegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+@media(max-width:420px){ .typegrid{grid-template-columns:repeat(2,1fr);} }
+.typecard{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:16px 8px 12px;text-align:center;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  box-shadow:0 1px 2px rgba(20,30,50,.04);
+}
+.typecard:active{background:var(--field);}
+.typecard .ic{font-size:28px;line-height:1;}
+.typecard .lb{font-size:12px;font-weight:600;color:var(--text);line-height:1.35;}
+.typecard.c-red{border-top:3px solid var(--red);}
+.typecard.c-orange{border-top:3px solid var(--orange);}
+.typecard.c-green{border-top:3px solid var(--green);}
+.typecard.c-blue{border-top:3px solid var(--blue);}
+
+/* ===== RECENT LIST / HISTORY ROWS ===== */
+.inclist{display:flex;flex-direction:column;gap:9px;}
+.incrow{
+  background:var(--card);border-radius:12px;padding:13px 14px;display:flex;align-items:center;gap:12px;
+  box-shadow:0 1px 2px rgba(20,30,50,.05);cursor:pointer;
+}
+.incrow .ic{font-size:22px;flex:none;}
+.incrow .m{flex:1;min-width:0;}
+.incrow .m .t{font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.incrow .m .s{font-size:11.5px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.badge{font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:999px;flex:none;white-space:nowrap;}
+.rowacts{display:flex;gap:4px;flex:none;}
+.rowacts button{
+  border:1px solid var(--border);background:#fff;border-radius:8px;width:30px;height:30px;
+  font-size:13px;cursor:pointer;color:var(--muted);
+}
+.st-orange{background:var(--orange-soft);color:var(--orange);}
+.st-green{background:var(--green-soft);color:var(--green);}
+.st-blue{background:var(--blue-soft);color:var(--blue);}
+.st-gray{background:var(--field);color:var(--muted);}
+.empty{padding:36px 14px;text-align:center;color:var(--muted);font-size:13.5px;}
+
+/* ===== CARDS / FORM ===== */
+.card{background:var(--card);border-radius:14px;padding:16px;margin-top:12px;box-shadow:0 1px 2px rgba(20,30,50,.05);}
+.card h2{font-size:15px;color:var(--navy);margin-bottom:12px;}
+.card h2 .sub{display:block;font-size:11.5px;color:var(--muted);font-weight:500;margin-top:3px;}
+.grouphead{font-size:12.5px;font-weight:700;color:var(--navy);margin:14px 0 8px;padding-top:10px;border-top:1px dashed var(--border);}
+.grouphead:first-child{margin-top:0;padding-top:0;border-top:none;}
+
+.f{margin-bottom:13px;}
+.f:last-child{margin-bottom:0;}
+.f>label{display:block;font-size:13px;color:var(--label);margin-bottom:6px;font-weight:500;}
+.req{color:var(--red);}
+.unit{font-size:12px;color:var(--muted);margin-left:6px;}
+
+input[type=text],input[type=number],input[type=date],input[type=time],input[type=tel],textarea,select{
+  width:100%;padding:12px 13px;border:1px solid var(--border);border-radius:10px;
+  background:var(--field);color:var(--text);font-family:inherit;font-size:15px;
+}
+input:focus,textarea:focus,select:focus{outline:none;border:2px solid var(--navy);background:#fff;padding:11px 12px;}
+textarea{resize:vertical;min-height:80px;line-height:1.6;}
+select{
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 17px) 50%, calc(100% - 12px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;
+  padding-right:34px;-webkit-appearance:none;appearance:none;
+}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.row2 .f{margin-bottom:0;}
+@media(max-width:400px){ .row2{grid-template-columns:1fr;gap:13px;} }
+
+/* yes/no toggle */
+.ynrow{display:flex;gap:8px;}
+.ynbtn{
+  flex:1;padding:11px;border-radius:10px;border:1px solid var(--border);background:var(--field);
+  font-size:13.5px;font-weight:600;color:var(--label);cursor:pointer;text-align:center;
+}
+.ynbtn.on{background:var(--navy);color:#fff;border-color:transparent;}
+.ynbtn.on.yes{background:var(--red);}
+.ynbtn.on.no{background:var(--green);}
+
+/* ===== TYPE PICKER (report.html step 1) ===== */
+.picker-hint{font-size:13px;color:var(--label);margin-bottom:14px;}
+
+/* ===== STEP BAR ===== */
+.steps{display:flex;gap:6px;margin:14px 0 4px;}
+.steps i{flex:1;height:4px;border-radius:3px;background:var(--border);}
+.steps i.on{background:var(--navy);}
+
+/* ===== PREVIEW ===== */
+.preview{
+  white-space:pre-wrap;word-break:break-word;font-size:14px;line-height:1.75;color:var(--text);
+  background:var(--field);border:1px solid var(--border);border-radius:12px;padding:16px;
+  min-height:220px;
+}
+.preview[contenteditable="true"]{background:#fff;border-color:var(--navy);}
+.preview-hint{font-size:11.5px;color:var(--muted);margin-top:8px;}
+
+/* ===== BUTTONS ===== */
+.btns{display:flex;gap:10px;margin-top:14px;}
+.btn{flex:1;padding:14px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;}
+.btn.pri{background:var(--navy);color:#fff;border-color:transparent;}
+.btn.danger{background:var(--red-soft);color:var(--red);border-color:transparent;}
+.btn.quiet{background:transparent;border-color:transparent;color:var(--muted);}
+.dashed{width:100%;padding:13px;border:1.5px dashed var(--border);border-radius:10px;background:transparent;color:var(--navy);font-size:13.5px;font-weight:600;cursor:pointer;margin-top:10px;}
+
+/* fixed bottom action bar */
+.actions{
+  position:fixed;left:0;right:0;bottom:0;z-index:60;background:var(--card);
+  border-top:1px solid var(--border);padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+}
+.actions-in{max-width:720px;margin:0 auto;display:flex;gap:10px;}
+.actions button{flex:1;padding:15px;border-radius:10px;border:none;font-size:14.5px;font-weight:700;cursor:pointer;}
+.actions .sec{background:var(--field);color:var(--text);}
+.actions .pri{background:var(--navy);color:#fff;}
+body.has-actions{padding-bottom:90px;}
+
+/* ===== SEARCH / FILTER ===== */
+.searchbar{position:relative;margin-top:14px;}
+.searchbar input{padding-left:38px;}
+.searchbar .ic{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:15px;}
+.filterrow{display:flex;gap:8px;margin-top:10px;overflow-x:auto;padding-bottom:2px;}
+.filterchip{
+  flex:none;padding:8px 14px;border-radius:999px;border:1px solid var(--border);background:var(--card);
+  font-size:12.5px;font-weight:600;color:var(--label);cursor:pointer;white-space:nowrap;
+}
+.filterchip.on{background:var(--navy);color:#fff;border-color:transparent;}
+
+/* ===== TOAST ===== */
+.toast{
+  position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translate(-50%,8px);
+  background:var(--text);color:#fff;padding:12px 20px;border-radius:999px;font-size:13.5px;font-weight:600;
+  z-index:99;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:88vw;text-align:center;
+}
+.toast.show{opacity:1;transform:translate(-50%,0);}
+
+@media (prefers-reduced-motion:reduce){ *{transition:none!important;} }
+
+/* ===== FORCED LIGHT MODE (iOS dark mode lock) ===== */
+@media (prefers-color-scheme: dark){
+  html,body{background:#F4F6F8!important;color:#1A1F29!important;}
+  .card,.stat,.incrow,.typecard,.actions,.toast~*{background:#FFFFFF!important;}
+  .topbar{background:#1B3A6B!important;}
+  input,textarea,select{background:#F7F8FA!important;color:#1A1F29!important;
+    -webkit-text-fill-color:#1A1F29!important;border-color:#E2E6EC!important;}
+  ::placeholder{color:#A7AEBB!important;-webkit-text-fill-color:#A7AEBB!important;}
+  .btn{background:#FFFFFF!important;color:#1A1F29!important;}
+  .btn.pri{background:#1B3A6B!important;color:#fff!important;}
+  .btn.quiet{background:transparent!important;color:#8A93A3!important;}
+  .actions .sec{background:#F7F8FA!important;color:#1A1F29!important;}
+  .actions .pri{background:#1B3A6B!important;color:#fff!important;}
+  .preview{background:#F7F8FA!important;color:#1A1F29!important;}
+  .ynbtn{background:#F7F8FA!important;color:#4B5563!important;}
+  .filterchip{background:#FFFFFF!important;color:#4B5563!important;}
+  .filterchip.on{background:#1B3A6B!important;color:#fff!important;}
+  .rowacts button{background:#FFFFFF!important;color:#8A93A3!important;}
+}
+
+</style>
+</head>
+<body>
+<div class="topbar"><div class="topbar-in">
+  <div>
+    <h1 id="topTitle">24H Incident Report</h1>
+    <div class="sub" id="topSub">ระบบรายงานเหตุการณ์ 24 ชั่วโมง</div>
+  </div>
+  <nav>
+    <a href="#" id="navHome" class="on">หน้าแรก</a>
+    <a href="#" id="navHistory">ประวัติ</a>
+  </nav>
+</div></div>
+
+<div class="wrap">
+
+  <!-- SCREEN: HOME -->
+  <div class="screen" id="screenHome">
+    <div class="stats" id="stats"></div>
+    <div class="section-title">เลือกประเภทเหตุการณ์เพื่อเริ่มรายงาน</div>
+    <div class="typegrid" id="homeTypegrid"></div>
+    <div class="section-title">เหตุการณ์ล่าสุด <a href="#" id="homeSeeAll">ดูทั้งหมด →</a></div>
+    <div class="inclist" id="homeRecent"><div class="empty">ยังไม่มีรายการ</div></div>
+  </div>
+
+  <!-- SCREEN: REPORT -->
+  <div class="screen" id="screenReport" style="display:none">
+    <div id="stepPick">
+      <div class="picker-hint">แตะประเภทเหตุการณ์ที่ตรงที่สุด</div>
+      <div class="typegrid" id="pickTypegrid"></div>
+    </div>
+
+    <div id="stepForm" style="display:none">
+      <div class="steps"><i class="on"></i><i></i></div>
+      <div class="card">
+        <h2>ข้อมูลพื้นฐาน<span class="sub">ทุกประเภทเหตุการณ์ต้องกรอก</span></h2>
+        <div id="coreFields"></div>
+      </div>
+      <div class="card" id="extraCard" style="display:none">
+        <h2 id="extraTitle">รายละเอียดเฉพาะเหตุการณ์</h2>
+        <div id="extraFields"></div>
+      </div>
+      <div class="btns">
+        <button class="btn quiet" id="btnChangeType">เปลี่ยนประเภท</button>
+        <button class="btn pri" id="btnToPreview">ดูตัวอย่างรายงาน →</button>
+      </div>
+    </div>
+
+    <div id="stepPreview" style="display:none">
+      <div class="steps"><i class="on"></i><i class="on"></i></div>
+      <div class="card">
+        <h2>ตรวจสอบรายงาน<span class="sub">แตะข้อความเพื่อแก้ไขได้โดยตรง</span></h2>
+        <div class="preview" id="previewText" contenteditable="true" spellcheck="false"></div>
+        <div class="preview-hint">ระบบสร้างข้อความให้อัตโนมัติจากข้อมูลที่กรอก — แก้ไขเพิ่มเติมได้ก่อนบันทึก</div>
+      </div>
+      <div class="btns">
+        <button class="btn quiet" id="btnBackForm">← แก้ไขข้อมูล</button>
+        <button class="btn" id="btnRegenerate">สร้างใหม่จากฟอร์ม</button>
+      </div>
+      <div class="btns" id="editOnlyBtns" style="display:none">
+        <button class="btn" id="btnDuplicate">ทำซ้ำเป็นเหตุการณ์ใหม่</button>
+        <button class="btn danger" id="btnDelete">ลบเหตุการณ์นี้</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN: HISTORY -->
+  <div class="screen" id="screenHistory" style="display:none">
+    <div class="searchbar">
+      <span class="ic">🔎</span>
+      <input type="text" id="q" placeholder="ค้นหา: วันที่ / เวลา / ชื่อ / สถานที่ / ทะเบียนรถ / คำค้น">
+    </div>
+    <div class="filterrow" id="statusFilter">
+      <div class="filterchip on" data-v="">ทั้งหมด</div>
+      <div class="filterchip" data-v="following">อยู่ระหว่างติดตาม</div>
+      <div class="filterchip" data-v="closed">ปิดเหตุ</div>
+      <div class="filterchip" data-v="transferred">ส่งต่อหน่วยงานอื่น</div>
+    </div>
+    <div class="f" style="margin-top:12px">
+      <select id="typeFilter"><option value="">ทุกประเภทเหตุการณ์</option></select>
+    </div>
+    <div class="section-title" style="margin-top:18px">รายการเหตุการณ์ <span id="resultCount"></span></div>
+    <div class="inclist" id="histList"><div class="empty">ยังไม่มีรายการ</div></div>
+    <button class="dashed" id="btnExport">สำรองข้อมูลทั้งหมดเป็น JSON</button>
+  </div>
+
+</div>
+
+<div class="actions" id="actionsBar" style="display:none"><div class="actions-in">
+  <button class="sec" id="btnCopy">คัดลอก</button>
+  <button class="sec" id="btnSave">บันทึก</button>
+  <button class="pri" id="btnLine">ส่งเข้า LINE</button>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== app.js ===== */
+/* app.js — ยูทิลิตี้ที่ใช้ร่วมกันทุกหน้า */
+(function (global) {
+  "use strict";
+
+  function pad(n) { return ("0" + n).slice(-2); }
+
+  function escapeHtml(s) {
+    return (s || "").toString()
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  function toast(msg) {
+    var t = document.getElementById("toast");
+    if (!t) {
+      t = document.createElement("div");
+      t.id = "toast";
+      t.className = "toast";
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(t._h);
+    t._h = setTimeout(function () { t.classList.remove("show"); }, 2300);
+  }
+
+  function copyText(text, okMsg) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { toast(okMsg || "คัดลอกแล้ว"); }, function () { legacyCopy(text, okMsg); });
+    } else {
+      legacyCopy(text, okMsg);
+    }
+  }
+  function legacyCopy(text, okMsg) {
+    var ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.top = "0"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, text.length);
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) {}
+    document.body.removeChild(ta);
+    toast(ok ? (okMsg || "คัดลอกแล้ว") : "คัดลอกไม่สำเร็จ — กดค้างที่ข้อความเพื่อเลือกเอง");
+  }
+
+  /* ส่งเข้า LINE: ใช้ URL scheme (line://) ตามที่พิสูจน์แล้วว่าเด้งแอปจริงบน iOS
+     คัดลอกข้อความสำรองไว้ก่อนเสมอ เผื่อเครื่องไม่มี LINE ติดตั้งจะได้วางเองได้ */
+  function shareToLine(text) {
+    copyText(text, "คัดลอกข้อความไว้แล้ว");
+    setTimeout(function () {
+      window.location.href = "line://msg/text/?" + encodeURIComponent(text);
+    }, 250);
+  }
+
+  function shareViaSystem(text, title) {
+    if (navigator.share) {
+      navigator.share({ title: title || "รายงานเหตุการณ์ 24 ชั่วโมง", text: text }).catch(function () {});
+    } else {
+      copyText(text, "เครื่องนี้ไม่รองรับการแชร์ — คัดลอกให้แล้ว");
+    }
+  }
+
+  function todayISO() {
+    var d = new Date();
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  }
+  function nowHM() {
+    var d = new Date();
+    return pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+
+  var STATUS_META = {
+    following: { label: "อยู่ระหว่างติดตาม", cls: "st-orange" },
+    closed: { label: "ปิดเหตุ", cls: "st-green" },
+    transferred: { label: "ส่งต่อหน่วยงานอื่น", cls: "st-blue" }
+  };
+  function statusMeta(status) {
+    return STATUS_META[status] || { label: "ไม่ระบุสถานะ", cls: "st-gray" };
+  }
+
+  function downloadBlob(blob, filename) {
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+
+  global.App = {
+    pad: pad,
+    escapeHtml: escapeHtml,
+    toast: toast,
+    copyText: copyText,
+    shareToLine: shareToLine,
+    shareViaSystem: shareViaSystem,
+    todayISO: todayISO,
+    nowHM: nowHM,
+    statusMeta: statusMeta,
+    downloadBlob: downloadBlob
+  };
+})(window);
+
+</script>
+<script>
+/* ===== incident-types.js ===== */
+/* incident-types.js
+   ทะเบียนประเภทเหตุการณ์ทั้งหมด + schema ของฟิลด์เฉพาะแต่ละประเภท
+   เพิ่มประเภทใหม่: push object ใหม่เข้า TYPES แล้วใส่ extra:[] (หรือ field schema ถ้ามี)
+   ไม่ต้องแก้ไฟล์อื่นเพื่อให้ระบบเลือกประเภท/สร้างฟอร์มพื้นฐานทำงาน
+*/
+(function (global) {
+  "use strict";
+
+  var PERSON_TYPE_OPTIONS = [
+    { value: "customer", label: "ลูกค้า" },
+    { value: "staff", label: "พนักงาน" },
+    { value: "tenant", label: "ผู้เช่า" },
+    { value: "outsider", label: "บุคคลภายนอก" }
+  ];
+
+  var YESNO_OPTIONS = [
+    { value: "yes", label: "ใช่" },
+    { value: "no", label: "ไม่ใช่" }
+  ];
+
+  var GENDER_OPTIONS = [
+    { value: "male", label: "ชาย" },
+    { value: "female", label: "หญิง" },
+    { value: "unknown", label: "ไม่ระบุ" }
+  ];
+
+  var STATUS_OPTIONS = [
+    { value: "following", label: "อยู่ระหว่างติดตาม" },
+    { value: "closed", label: "ปิดเหตุ" },
+    { value: "transferred", label: "ส่งต่อหน่วยงานอื่น" }
+  ];
+
+  /* ---- ฟิลด์กลางที่ทุกประเภทเหตุการณ์ต้องมี ---- */
+  var CORE_FIELDS = [
+    { key: "incidentDate", label: "วันที่เกิดเหตุ", type: "date", required: true, row: "r1" },
+    { key: "incidentTime", label: "เวลาที่เกิดเหตุ", type: "time", required: true, row: "r1" },
+    { key: "reportedTime", label: "เวลาที่ได้รับแจ้ง", type: "time", row: "r2" },
+    { key: "endTime", label: "เวลาสิ้นสุดเหตุการณ์", type: "time", row: "r2" },
+    { key: "location", label: "สถานที่เกิดเหตุ", type: "text", required: true },
+    { key: "reporterName", label: "ผู้แจ้งเหตุ", type: "text", row: "r3" },
+    { key: "receiverName", label: "ผู้รับแจ้ง", type: "text", row: "r3" },
+    { key: "handlerName", label: "ผู้ดำเนินการ", type: "text" },
+    { key: "details", label: "รายละเอียดเพิ่มเติม", type: "textarea" },
+    { key: "actionResult", label: "ผลการดำเนินการ", type: "textarea" },
+    { key: "status", label: "สถานะ", type: "select", options: STATUS_OPTIONS, required: true }
+  ];
+
+  function personTypeField(key) {
+    return { key: key || "personType", label: "ประเภทบุคคล", type: "select", options: PERSON_TYPE_OPTIONS };
+  }
+  function yesnoField(key, label) {
+    return { key: key, label: label, type: "yesno" };
+  }
+
+  /* ---- ประเภทเหตุการณ์ ---- */
+  var TYPES = [
+
+    {
+      id: "accident",
+      label: "อุบัติเหตุ",
+      icon: "🤕",
+      color: "red",
+      extra: [
+        { key: "victimName", label: "ชื่อผู้ประสบเหตุ", type: "text" },
+        personTypeField(),
+        {
+          key: "accidentType", label: "ลักษณะอุบัติเหตุ", type: "select",
+          options: [
+            { value: "fall", label: "หกล้ม" },
+            { value: "dropped_on", label: "ของตกใส่" },
+            { value: "sharp", label: "ถูกของมีคม" },
+            { value: "pinched", label: "ถูกอุปกรณ์หนีบ" },
+            { value: "tripped", label: "สะดุด" },
+            { value: "struck", label: "ถูกชน" },
+            { value: "other", label: "อื่น ๆ" }
+          ]
+        },
+        { key: "accidentTypeOther", label: "ระบุลักษณะอุบัติเหตุ (กรณีอื่น ๆ)", type: "text" },
+        { key: "cause", label: "สาเหตุเบื้องต้น", type: "text" },
+        { key: "injuredPart", label: "อวัยวะที่ได้รับบาดเจ็บ", type: "text", row: "a1" },
+        {
+          key: "severity", label: "ระดับความรุนแรง", type: "select", row: "a1",
+          options: [
+            { value: "minor", label: "เล็กน้อย" },
+            { value: "moderate", label: "ปานกลาง" },
+            { value: "severe", label: "รุนแรง" }
+          ]
+        },
+        { key: "firstAid", label: "การช่วยเหลือเบื้องต้น", type: "textarea" },
+        yesnoField("sentHospital", "นำส่งโรงพยาบาลหรือไม่"),
+        { key: "hospital", label: "โรงพยาบาล", type: "text" },
+        { key: "areaCondition", label: "สภาพพื้นที่เกิดเหตุ", type: "text" },
+        yesnoField("hasCCTV", "มี CCTV หรือไม่"),
+        yesnoField("hasWitness", "มีพยานหรือไม่"),
+        { key: "fixApproach", label: "แนวทางแก้ไข", type: "textarea" },
+        { key: "preventApproach", label: "แนวทางป้องกันไม่ให้เกิดซ้ำ", type: "textarea" }
+      ]
+    },
+
+    {
+      id: "patient",
+      label: "พบผู้ป่วย / เจ็บป่วย",
+      icon: "🚑",
+      color: "red",
+      extra: [
+        { key: "patientName", label: "ชื่อผู้ป่วย", type: "text" },
+        { key: "gender", label: "เพศ", type: "select", options: GENDER_OPTIONS, row: "p1" },
+        { key: "approxAge", label: "อายุโดยประมาณ", type: "number", unit: "ปี", row: "p1" },
+        personTypeField(),
+        { key: "symptoms", label: "อาการที่พบ", type: "textarea" },
+        {
+          key: "consciousness", label: "ระดับการรู้สึกตัว", type: "select",
+          options: [
+            { value: "alert", label: "รู้สึกตัวดี" },
+            { value: "drowsy", label: "ซึมลง" },
+            { value: "unconscious", label: "ไม่รู้สึกตัว" }
+          ]
+        },
+        yesnoField("canTalk", "สามารถพูดคุยได้หรือไม่"),
+        yesnoField("hasWound", "มีบาดแผลหรือไม่"),
+        yesnoField("hasBleeding", "มีเลือดออกหรือไม่"),
+        { key: "chronicDisease", label: "โรคประจำตัว (ถ้าทราบ)", type: "text" },
+        { key: "firstAid", label: "การปฐมพยาบาล", type: "textarea" },
+        yesnoField("calledAmbulance", "เรียกรถพยาบาลหรือไม่"),
+        { key: "respondUnit", label: "หน่วยงานที่เข้าช่วยเหลือ", type: "text" },
+        { key: "hospital", label: "โรงพยาบาลที่นำส่ง", type: "text" },
+        yesnoField("relativeReceived", "ญาติมารับหรือไม่"),
+        { key: "resultAfterHelp", label: "ผลหลังช่วยเหลือ", type: "textarea" }
+      ]
+    },
+
+    {
+      id: "vehicle",
+      label: "รถชน / อุบัติเหตุยานพาหนะ",
+      icon: "🚗",
+      color: "red",
+      extra: [
+        { key: "crashPoint", label: "จุดเกิดเหตุ", type: "text" },
+
+        { key: "v1Group", label: "รถคันที่ 1", type: "group" },
+        { key: "v1Type", label: "ประเภทรถ", type: "text", row: "v1a" },
+        { key: "v1Brand", label: "ยี่ห้อ / รุ่น", type: "text", row: "v1a" },
+        { key: "v1Color", label: "สี", type: "text", row: "v1b" },
+        { key: "v1Plate", label: "ทะเบียน", type: "text", row: "v1b" },
+        { key: "v1Driver", label: "ชื่อผู้ขับขี่", type: "text", row: "v1c" },
+        { key: "v1Phone", label: "เบอร์ติดต่อ", type: "text", row: "v1c" },
+
+        { key: "v2Group", label: "รถคันที่ 2", type: "group" },
+        { key: "v2Type", label: "ประเภทรถ", type: "text", row: "v2a" },
+        { key: "v2Brand", label: "ยี่ห้อ / รุ่น", type: "text", row: "v2a" },
+        { key: "v2Color", label: "สี", type: "text", row: "v2b" },
+        { key: "v2Plate", label: "ทะเบียน", type: "text", row: "v2b" },
+        { key: "v2Driver", label: "ชื่อผู้ขับขี่", type: "text", row: "v2c" },
+        { key: "v2Phone", label: "เบอร์ติดต่อ", type: "text", row: "v2c" },
+
+        { key: "crashType", label: "ลักษณะการชน", type: "text" },
+        { key: "damage1", label: "ความเสียหายรถคันที่ 1", type: "textarea" },
+        { key: "damage2", label: "ความเสียหายรถคันที่ 2", type: "textarea" },
+        { key: "companyDamage", label: "ความเสียหายต่อทรัพย์สินบริษัท", type: "textarea" },
+        yesnoField("hasInjury", "มีผู้บาดเจ็บหรือไม่"),
+        yesnoField("hasCCTV", "มี CCTV หรือไม่"),
+        yesnoField("hasDashcam", "มีกล้องหน้ารถหรือไม่"),
+        yesnoField("hasWitness", "มีพยานหรือไม่"),
+        yesnoField("reportedPolice", "แจ้งตำรวจหรือไม่"),
+        { key: "policeStation", label: "สถานีตำรวจ", type: "text", row: "v3" },
+        { key: "policeRecordNo", label: "เลขบันทึกประจำวัน", type: "text", row: "v3" },
+        { key: "insuranceCo", label: "บริษัทประกัน", type: "text" },
+        { key: "agreement", label: "การตกลงของคู่กรณี", type: "textarea" },
+        { key: "lpAction", label: "การดำเนินการของฝ่ายป้องกันฯ", type: "textarea" }
+      ]
+    },
+
+    { id: "fall", label: "ลื่นล้ม", icon: "⚠️", color: "orange", extra: [] },
+    { id: "fight", label: "ทะเลาะวิวาท", icon: "😠", color: "red", extra: [] },
+
+    {
+      id: "theft",
+      label: "ลักทรัพย์ / จับกุม",
+      icon: "🚨",
+      color: "red",
+      extra: [
+        personTypeField(),
+        { key: "suspectName", label: "ชื่อผู้ก่อเหตุ (ถ้าทราบ)", type: "text", row: "t1" },
+        { key: "approxAge", label: "อายุโดยประมาณ", type: "number", unit: "ปี", row: "t1" },
+        { key: "itemList", label: "รายการสินค้า", type: "textarea" },
+        { key: "quantity", label: "จำนวน", type: "text", row: "t2" },
+        { key: "value", label: "มูลค่า", type: "number", unit: "บาท", row: "t2" },
+        { key: "method", label: "วิธีการก่อเหตุ", type: "textarea" },
+        { key: "foundPoint", label: "จุดที่ตรวจพบ", type: "text" },
+        { key: "detainedPoint", label: "จุดที่ควบคุมตัว", type: "text" },
+        yesnoField("hasCCTV", "มี CCTV หรือไม่"),
+        { key: "evidence", label: "หลักฐานที่พบ", type: "textarea" },
+        {
+          key: "admitOrDeny", label: "ยอมรับหรือปฏิเสธ", type: "select",
+          options: [{ value: "admit", label: "ยอมรับ" }, { value: "deny", label: "ปฏิเสธ" }]
+        },
+        yesnoField("paid", "ชำระค่าสินค้าหรือไม่"),
+        yesnoField("reportedPolice", "แจ้งตำรวจหรือไม่"),
+        { key: "policeStation", label: "สถานีตำรวจ", type: "text", row: "t3" },
+        { key: "policeRecordNo", label: "เลขบันทึกประจำวัน", type: "text", row: "t3" }
+      ]
+    },
+
+    {
+      id: "fire",
+      label: "เพลิงไหม้ / พบกลุ่มควัน",
+      icon: "🔥",
+      color: "red",
+      extra: [
+        { key: "foundPoint", label: "จุดที่พบเหตุ", type: "text" },
+        { key: "founder", label: "ผู้พบเหตุ", type: "text" },
+        { key: "burningItem", label: "สิ่งที่เกิดการไหม้", type: "text" },
+        yesnoField("hasFlame", "มีเปลวไฟหรือไม่"),
+        yesnoField("hasSmoke", "มีกลุ่มควันหรือไม่"),
+        yesnoField("powerCut", "มีการตัดกระแสไฟหรือไม่"),
+        { key: "extinguisherUsed", label: "อุปกรณ์ดับเพลิงที่ใช้", type: "text", row: "f1" },
+        { key: "extinguisherCount", label: "จำนวนถังดับเพลิงที่ใช้", type: "number", unit: "ถัง", row: "f1" },
+        yesnoField("evacuated", "มีการอพยพหรือไม่"),
+        yesnoField("hasInjury", "มีผู้ได้รับบาดเจ็บหรือไม่"),
+        yesnoField("hasDamage", "มีทรัพย์สินเสียหายหรือไม่"),
+        { key: "cause", label: "สาเหตุเบื้องต้น", type: "text" },
+        { key: "inspectUnit", label: "หน่วยงานที่เข้าตรวจสอบ", type: "text" },
+        { key: "fixApproach", label: "การแก้ไข", type: "textarea" },
+        { key: "preventApproach", label: "แนวทางป้องกันซ้ำ", type: "textarea" }
+      ]
+    },
+
+    { id: "property_damage", label: "ทรัพย์สินเสียหาย", icon: "📦", color: "orange", extra: [] },
+    { id: "customer", label: "เหตุเกี่ยวกับลูกค้า", icon: "🧑‍🤝‍🧑", color: "orange", extra: [] },
+    { id: "staff", label: "เหตุเกี่ยวกับพนักงาน", icon: "🪪", color: "orange", extra: [] },
+    { id: "electrical", label: "ไฟฟ้า / ระบบอาคารขัดข้อง", icon: "⚡", color: "orange", extra: [] },
+    { id: "dropped", label: "สินค้าหรือทรัพย์สินตกหล่น", icon: "📉", color: "orange", extra: [] },
+    { id: "suspicious", label: "บุคคลต้องสงสัย", icon: "🕵️", color: "orange", extra: [] },
+    { id: "lost_property", label: "พบทรัพย์สินสูญหาย", icon: "🔎", color: "green", extra: [] },
+    { id: "other", label: "อื่น ๆ", icon: "📝", color: "blue", extra: [] }
+  ];
+
+  function getType(id) {
+    for (var i = 0; i < TYPES.length; i++) if (TYPES[i].id === id) return TYPES[i];
+    return null;
+  }
+
+  global.IncidentTypes = {
+    TYPES: TYPES,
+    CORE_FIELDS: CORE_FIELDS,
+    PERSON_TYPE_OPTIONS: PERSON_TYPE_OPTIONS,
+    YESNO_OPTIONS: YESNO_OPTIONS,
+    GENDER_OPTIONS: GENDER_OPTIONS,
+    STATUS_OPTIONS: STATUS_OPTIONS,
+    getType: getType
+  };
+})(window);
+
+</script>
+<script>
+/* ===== storage.js ===== */
+/* storage.js — เก็บข้อมูลเหตุการณ์ใน localStorage (เวอร์ชันแรก) */
+(function (global) {
+  "use strict";
+
+  var LIST_KEY = "incident24_records_v1";
+  var COUNTER_PREFIX = "incident24_counter_";
+  var DRAFT_KEY = "incident24_draft_v1";
+
+  function pad(n, w) {
+    n = String(n);
+    while (n.length < (w || 2)) n = "0" + n;
+    return n;
+  }
+
+  function readList() {
+    try {
+      var raw = localStorage.getItem(LIST_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+  function writeList(list) {
+    try {
+      localStorage.setItem(LIST_KEY, JSON.stringify(list));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /* วันที่อ้างอิง ใช้ พ.ศ. ตามข้อ 18 ของสเปก */
+  function beDateCode(d) {
+    d = d || new Date();
+    return String(d.getFullYear() + 543) + pad(d.getMonth() + 1) + pad(d.getDate());
+  }
+
+  function nextId(d) {
+    var code = beDateCode(d);
+    var key = COUNTER_PREFIX + code;
+    var n = 1;
+    try {
+      n = parseInt(localStorage.getItem(key) || "0", 10) + 1;
+      localStorage.setItem(key, String(n));
+    } catch (e) {
+      n = 1;
+    }
+    return "INC-" + code + "-" + pad(n, 3);
+  }
+
+  function all() {
+    return readList();
+  }
+
+  function getById(id) {
+    var list = readList();
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    return null;
+  }
+
+  /* บันทึกใหม่: ยังไม่มี id -> สร้างเลขอ้างอิงใหม่ตอนนี้ */
+  function create(record) {
+    var now = new Date().toISOString();
+    record.id = nextId(new Date());
+    record.createdAt = now;
+    record.updatedAt = now;
+    var list = readList();
+    list.push(record);
+    writeList(list);
+    return record;
+  }
+
+  function update(id, patch) {
+    var list = readList();
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === id) {
+        list[i] = Object.assign({}, list[i], patch, { id: id, updatedAt: new Date().toISOString() });
+        writeList(list);
+        return list[i];
+      }
+    }
+    return null;
+  }
+
+  function remove(id) {
+    var list = readList().filter(function (r) { return r.id !== id; });
+    return writeList(list);
+  }
+
+  /* คัดลอกเหตุการณ์เป็นฉบับร่างใหม่ (ยังไม่มี id จนกว่าจะบันทึก) */
+  function duplicate(id) {
+    var src = getById(id);
+    if (!src) return null;
+    var copy = JSON.parse(JSON.stringify(src));
+    delete copy.id;
+    delete copy.createdAt;
+    delete copy.updatedAt;
+    if (copy.core) copy.core.status = "following";
+    return copy;
+  }
+
+  function exportJSON() {
+    return JSON.stringify(readList(), null, 2);
+  }
+
+  /* ฉบับร่างระหว่างกรอก กันข้อมูลหายถ้าเผลอปิดหน้า/สลับแอป */
+  function saveDraft(draft) {
+    try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch (e) {}
+  }
+  function loadDraft() {
+    try {
+      var raw = sessionStorage.getItem(DRAFT_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+  function clearDraft() {
+    try { sessionStorage.removeItem(DRAFT_KEY); } catch (e) {}
+  }
+
+  global.Storage = {
+    all: all,
+    getById: getById,
+    create: create,
+    update: update,
+    remove: remove,
+    duplicate: duplicate,
+    exportJSON: exportJSON,
+    nextId: nextId,
+    saveDraft: saveDraft,
+    loadDraft: loadDraft,
+    clearDraft: clearDraft
+  };
+})(window);
+
+</script>
+<script>
+/* ===== report-generator.js ===== */
+/* report-generator.js
+   สร้างข้อความรายงานจากข้อมูลที่กรอกจริงเท่านั้น (deterministic, template-based)
+   - ไม่ใช้ AI / ไม่เดาข้อมูล
+   - field ว่าง -> ตัดประโยคนั้นทิ้ง ไม่ใส่ "-"
+*/
+(function (global) {
+  "use strict";
+
+  var THAI_MONTHS = ["", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+    "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+
+  function thaiDate(yyyy_mm_dd) {
+    if (!yyyy_mm_dd) return "";
+    var p = yyyy_mm_dd.split("-");
+    if (p.length !== 3) return yyyy_mm_dd;
+    var y = parseInt(p[0], 10) + 543, m = parseInt(p[1], 10), d = parseInt(p[2], 10);
+    return d + " " + THAI_MONTHS[m] + " " + y;
+  }
+
+  function has(v) { return v !== undefined && v !== null && String(v).trim() !== ""; }
+
+  function optLabel(options, value) {
+    if (!has(value)) return "";
+    for (var i = 0; i < (options || []).length; i++) if (options[i].value === value) return options[i].label;
+    return value;
+  }
+
+  /* รวม clause ที่มีข้อมูลจริงเข้าเป็นย่อหน้าเดียว คั่นด้วยวรรค (ตัวที่ว่างถูกตัดออกไปแล้วตั้งแต่ต้นทาง) */
+  function joinClauses(clauses) {
+    var out = [];
+    for (var i = 0; i < clauses.length; i++) if (has(clauses[i])) out.push(clauses[i]);
+    return out.join(" ");
+  }
+
+  function yn(v, yesText, noText) {
+    if (v === "yes") return yesText;
+    if (v === "no") return noText;
+    return "";
+  }
+
+  /* กันคำนำหน้าซ้ำ (เช่น ผู้ใช้พิมพ์ "โรงพยาบาลไทรน้อย" มาเอง ไม่ต้องเติม "โรงพยาบาล" อีกชั้น) */
+  function withPrefix(v, prefix) {
+    if (!has(v)) return "";
+    var s = String(v).trim();
+    return s.indexOf(prefix) === 0 ? s : prefix + s;
+  }
+
+  /* ---------------- ย่อหน้า "จากการตรวจสอบพบว่า" / การดำเนินการ ต่อประเภท ---------------- */
+  var IT = null; // lazy bind to window.IncidentTypes เพื่อดึง option label
+  function opts() { return IT || (IT = global.IncidentTypes); }
+
+  var BUILDERS = {
+
+    accident: function (e) {
+      var personLabel = optLabel(opts().PERSON_TYPE_OPTIONS, e.personType);
+      var atLabel = optLabel([
+        { value: "fall", label: "หกล้ม" }, { value: "dropped_on", label: "ของตกใส่" },
+        { value: "sharp", label: "ถูกของมีคม" }, { value: "pinched", label: "ถูกอุปกรณ์หนีบ" },
+        { value: "tripped", label: "สะดุด" }, { value: "struck", label: "ถูกชน" },
+        { value: "other", label: e.accidentTypeOther || "อื่น ๆ" }
+      ], e.accidentType);
+      var sevLabel = optLabel([{ value: "minor", label: "เล็กน้อย" }, { value: "moderate", label: "ปานกลาง" }, { value: "severe", label: "รุนแรง" }], e.severity);
+
+      var findings = joinClauses([
+        has(e.victimName) ? "ผู้ประสบเหตุชื่อ" + e.victimName + (personLabel ? " เป็น" + personLabel : "") : (personLabel ? "ผู้ประสบเหตุเป็น" + personLabel : ""),
+        has(atLabel) ? "ลักษณะอุบัติเหตุคือ" + atLabel : "",
+        has(e.cause) ? "สาเหตุเบื้องต้นคาดว่าเกิดจาก" + e.cause : "",
+        has(e.injuredPart) ? "ได้รับบาดเจ็บบริเวณ" + e.injuredPart : "",
+        has(sevLabel) ? "ระดับความรุนแรงอยู่ในระดับ" + sevLabel : "",
+        has(e.areaCondition) ? "สภาพพื้นที่เกิดเหตุ" + e.areaCondition : "",
+        yn(e.hasCCTV, "จุดเกิดเหตุมีกล้องวงจรปิดบันทึกภาพไว้", "จุดเกิดเหตุไม่มีกล้องวงจรปิด"),
+        yn(e.hasWitness, "มีพยานเห็นเหตุการณ์", "ไม่มีพยานเห็นเหตุการณ์")
+      ]);
+      var actions = joinClauses([
+        has(e.firstAid) ? "ให้การช่วยเหลือเบื้องต้นโดย" + e.firstAid : "",
+        yn(e.sentHospital, has(e.hospital) ? "นำส่ง" + withPrefix(e.hospital, "โรงพยาบาล") : "นำส่งโรงพยาบาล", "ไม่ได้นำส่งโรงพยาบาล"),
+        has(e.fixApproach) ? "แนวทางแก้ไขคือ" + e.fixApproach : "",
+        has(e.preventApproach) ? "แนวทางป้องกันไม่ให้เกิดซ้ำคือ" + e.preventApproach : ""
+      ]);
+      return { findings: findings, actions: actions, opening: "เกิดอุบัติเหตุ" };
+    },
+
+    patient: function (e) {
+      var personLabel = optLabel(opts().PERSON_TYPE_OPTIONS, e.personType);
+      var genderLabel = optLabel(opts().GENDER_OPTIONS, e.gender);
+      var consLabel = optLabel([{ value: "alert", label: "รู้สึกตัวดี" }, { value: "drowsy", label: "ซึมลง" }, { value: "unconscious", label: "ไม่รู้สึกตัว" }], e.consciousness);
+
+      var nameBit = has(e.patientName) ? "ผู้ป่วยชื่อ" + e.patientName : "";
+      var descBits = [];
+      if (has(genderLabel)) descBits.push("เพศ" + genderLabel);
+      if (has(e.approxAge)) descBits.push("อายุประมาณ " + e.approxAge + " ปี");
+      if (descBits.length) nameBit += (nameBit ? " (" : "ผู้ป่วย(") + descBits.join(" ") + ")";
+      if (has(personLabel)) nameBit += (nameBit ? " เป็น" : "เป็น") + personLabel;
+
+      var findings = joinClauses([
+        nameBit,
+        has(e.symptoms) ? "มีอาการ" + e.symptoms : "",
+        has(consLabel) ? "ระดับการรู้สึกตัว" + consLabel : "",
+        yn(e.canTalk, "สามารถพูดคุยโต้ตอบได้", "ไม่สามารถพูดคุยโต้ตอบได้"),
+        yn(e.hasWound, "พบบาดแผล", "ไม่พบบาดแผล"),
+        yn(e.hasBleeding, "มีเลือดออก", "ไม่มีเลือดออก"),
+        has(e.chronicDisease) ? "มีโรคประจำตัวคือ" + e.chronicDisease : ""
+      ]);
+      var actions = joinClauses([
+        has(e.firstAid) ? "ให้การปฐมพยาบาลเบื้องต้นโดย" + e.firstAid : "",
+        yn(e.calledAmbulance, "ได้เรียกรถพยาบาล", "ไม่ได้เรียกรถพยาบาล"),
+        has(e.respondUnit) ? "หน่วยงานที่เข้าช่วยเหลือคือ" + e.respondUnit : "",
+        has(e.hospital) ? "นำส่ง" + withPrefix(e.hospital, "โรงพยาบาล") : "",
+        yn(e.relativeReceived, "มีญาติมารับตัว", "ยังไม่มีญาติมารับตัว"),
+        has(e.resultAfterHelp) ? "ผลหลังการช่วยเหลือ" + e.resultAfterHelp : ""
+      ]);
+      return { findings: findings, actions: actions, opening: "พบผู้ป่วย/เจ็บป่วย" };
+    },
+
+    vehicle: function (e) {
+      function veh(n) {
+        var t = e["v" + n + "Type"], br = e["v" + n + "Brand"], c = e["v" + n + "Color"],
+          pl = e["v" + n + "Plate"], dr = e["v" + n + "Driver"], ph = e["v" + n + "Phone"];
+        var parts = [];
+        if (has(t)) parts.push("เป็น" + t);
+        if (has(br)) parts.push("ยี่ห้อ " + br);
+        if (has(c)) parts.push("สี" + c);
+        if (has(pl)) parts.push("ทะเบียน " + pl);
+        if (has(dr)) parts.push("ผู้ขับขี่ชื่อ" + dr);
+        if (has(ph)) parts.push("เบอร์ติดต่อ " + ph);
+        if (!parts.length) return "";
+        return "รถคันที่ " + n + " " + parts.join(" ");
+      }
+      var findings = joinClauses([
+        has(e.crashPoint) ? "จุดเกิดเหตุอยู่" + withPrefix(e.crashPoint, "บริเวณ") : "",
+        veh(1), veh(2),
+        has(e.crashType) ? "ลักษณะการชนคือ" + e.crashType : "",
+        has(e.damage1) ? "ความเสียหายรถคันที่ 1 " + e.damage1 : "",
+        has(e.damage2) ? "ความเสียหายรถคันที่ 2 " + e.damage2 : "",
+        has(e.companyDamage) ? "มีความเสียหายต่อทรัพย์สินบริษัท " + e.companyDamage : "",
+        yn(e.hasInjury, "มีผู้ได้รับบาดเจ็บ", "ไม่มีผู้ได้รับบาดเจ็บ"),
+        yn(e.hasCCTV, "จุดเกิดเหตุมีกล้องวงจรปิด", "จุดเกิดเหตุไม่มีกล้องวงจรปิด"),
+        yn(e.hasDashcam, "มีภาพจากกล้องหน้ารถ", "ไม่มีภาพจากกล้องหน้ารถ"),
+        yn(e.hasWitness, "มีพยานเห็นเหตุการณ์", "ไม่มีพยานเห็นเหตุการณ์")
+      ]);
+      var actions = joinClauses([
+        yn(e.reportedPolice,
+          "แจ้งความต่อพนักงานสอบสวน" + (has(e.policeStation) ? "สถานีตำรวจ" + e.policeStation : "") + (has(e.policeRecordNo) ? " เลขบันทึกประจำวัน" + e.policeRecordNo : ""),
+          "ไม่ได้แจ้งความ"),
+        has(e.insuranceCo) ? "ประสานงานกับบริษัทประกัน" + e.insuranceCo : "",
+        has(e.agreement) ? "การตกลงของคู่กรณี" + e.agreement : "",
+        has(e.lpAction) ? "ฝ่ายป้องกันฯ ดำเนินการ" + e.lpAction : ""
+      ]);
+      return { findings: findings, actions: actions, opening: "เกิดอุบัติเหตุยานพาหนะ" };
+    },
+
+    fire: function (e) {
+      var findings = joinClauses([
+        has(e.foundPoint) ? "จุดที่พบเหตุอยู่" + withPrefix(e.foundPoint, "บริเวณ") : "",
+        has(e.founder) ? "ผู้พบเหตุคือ" + e.founder : "",
+        has(e.burningItem) ? "สิ่งที่เกิดการไหม้คือ" + e.burningItem : "",
+        yn(e.hasFlame, "พบเปลวไฟ", "ไม่พบเปลวไฟ"),
+        yn(e.hasSmoke, "พบกลุ่มควัน", "ไม่พบกลุ่มควัน"),
+        has(e.cause) ? "สาเหตุเบื้องต้นคาดว่าเกิดจาก" + e.cause : "",
+        yn(e.hasInjury, "มีผู้ได้รับบาดเจ็บ", "ไม่มีผู้ได้รับบาดเจ็บ"),
+        yn(e.hasDamage, "มีทรัพย์สินเสียหาย", "ไม่มีทรัพย์สินเสียหาย")
+      ]);
+      var actions = joinClauses([
+        yn(e.powerCut, "ได้ทำการตัดกระแสไฟฟ้าบริเวณจุดเกิดเหตุ", "ไม่ได้ตัดกระแสไฟฟ้า"),
+        has(e.extinguisherUsed) ? "ใช้" + e.extinguisherUsed + "ในการระงับเหตุ" + (has(e.extinguisherCount) ? " จำนวน " + e.extinguisherCount + " ถัง" : "") : "",
+        yn(e.evacuated, "มีการอพยพผู้ที่อยู่ในพื้นที่", "ไม่มีการอพยพ"),
+        has(e.inspectUnit) ? "หน่วยงานที่เข้าตรวจสอบคือ" + e.inspectUnit : "",
+        has(e.fixApproach) ? "ดำเนินการแก้ไขโดย" + e.fixApproach : "",
+        has(e.preventApproach) ? "แนวทางป้องกันซ้ำคือ" + e.preventApproach : ""
+      ]);
+      return { findings: findings, actions: actions, opening: "พบเพลิงไหม้/กลุ่มควัน" };
+    },
+
+    theft: function (e) {
+      var personLabel = optLabel(opts().PERSON_TYPE_OPTIONS, e.personType);
+      var admitLabel = optLabel([{ value: "admit", label: "ยอมรับการกระทำ" }, { value: "deny", label: "ปฏิเสธการกระทำ" }], e.admitOrDeny);
+      var findings = joinClauses([
+        has(personLabel) ? "ผู้ก่อเหตุเป็น" + personLabel : "",
+        (has(e.suspectName) || has(e.approxAge)) ? "ชื่อ" + (e.suspectName || "ไม่ทราบชื่อ") + (has(e.approxAge) ? " อายุประมาณ " + e.approxAge + " ปี" : "") : "",
+        has(e.itemList) ? "รายการสินค้าที่เกี่ยวข้องคือ" + e.itemList + (has(e.quantity) ? " จำนวน" + e.quantity : "") + (has(e.value) ? " มูลค่าประมาณ " + e.value + " บาท" : "") : "",
+        has(e.method) ? "วิธีการก่อเหตุคือ" + e.method : "",
+        has(e.foundPoint) ? "ตรวจพบที่" + withPrefix(e.foundPoint, "บริเวณ") : "",
+        has(e.detainedPoint) ? "ควบคุมตัวไว้ที่" + e.detainedPoint : "",
+        yn(e.hasCCTV, "จุดเกิดเหตุมีกล้องวงจรปิดบันทึกภาพไว้", "จุดเกิดเหตุไม่มีกล้องวงจรปิด"),
+        has(e.evidence) ? "หลักฐานที่พบคือ" + e.evidence : "",
+        has(admitLabel) ? "ผู้ก่อเหตุ" + admitLabel : ""
+      ]);
+      var actions = joinClauses([
+        yn(e.paid, "ชำระค่าสินค้าเรียบร้อยแล้ว", "ไม่ได้ชำระค่าสินค้า"),
+        yn(e.reportedPolice,
+          "แจ้งความต่อพนักงานสอบสวน" + (has(e.policeStation) ? "สถานีตำรวจ" + e.policeStation : "") + (has(e.policeRecordNo) ? " เลขบันทึกประจำวัน" + e.policeRecordNo : ""),
+          "ไม่ได้แจ้งความ")
+      ]);
+      return { findings: findings, actions: actions, opening: "ลักทรัพย์/จับกุมผู้ก่อเหตุ" };
+    }
+  };
+
+  /* ---------------- ประกอบรายงานทั้งฉบับ ---------------- */
+  function generate(record) {
+    var typeDef = opts().getType(record.typeId);
+    var typeLabel = typeDef ? typeDef.label : record.typeId;
+    var c = record.core || {};
+    var e = record.extra || {};
+    var builder = BUILDERS[record.typeId];
+    var built = builder ? builder(e) : { findings: "", actions: "", opening: typeLabel };
+
+    var lines = [];
+    lines.push("รายงานเหตุการณ์ 24 ชั่วโมง");
+    lines.push("กรณี" + typeLabel);
+    if (record.id) lines.push("เลขที่อ้างอิง " + record.id);
+    lines.push("");
+
+    /* ย่อหน้าเปิด: รับแจ้ง */
+    var open = "";
+    if (has(c.incidentDate) || has(c.incidentTime)) {
+      open += "วันที่ " + (has(c.incidentDate) ? thaiDate(c.incidentDate) : "") +
+        (has(c.incidentTime) ? " เวลาประมาณ " + c.incidentTime + " น." : "") + " ";
+    }
+    open += "ฝ่ายป้องกันฯ ได้รับแจ้ง" + (has(c.reporterName) ? "จาก" + c.reporterName + " " : "") + "ว่า" + built.opening;
+    if (has(c.location)) open += withPrefix(c.location, "บริเวณ");
+    if (has(c.reportedTime) && c.reportedTime !== c.incidentTime) open += " โดยรับแจ้งเหตุเมื่อเวลา " + c.reportedTime + " น.";
+    if (has(c.receiverName)) open += " ทั้งนี้ " + c.receiverName + " เป็นผู้รับแจ้งเหตุดังกล่าว";
+    lines.push(open);
+
+    var goRespond = "ฝ่ายป้องกันฯ จึงรุดไปตรวจสอบที่เกิดเหตุทันที" + (has(c.handlerName) ? " โดย" + c.handlerName + "เป็นผู้ดำเนินการ" : "");
+    lines.push("");
+    lines.push(goRespond);
+
+    if (has(built.findings)) {
+      lines.push("");
+      lines.push("จากการตรวจสอบพบว่า " + built.findings);
+    }
+
+    if (has(c.details)) {
+      lines.push("");
+      lines.push(c.details);
+    }
+
+    if (has(built.actions)) {
+      lines.push("");
+      lines.push("ทางฝ่ายป้องกันฯ ได้ดำเนินการ " + built.actions);
+    }
+
+    if (has(c.actionResult)) {
+      lines.push("");
+      lines.push("ผลการดำเนินการ " + c.actionResult);
+    }
+
+    var endBits = [];
+    if (has(c.endTime)) endBits.push("เหตุการณ์ยุติเมื่อเวลา " + c.endTime + " น.");
+    if (has(c.status)) {
+      var sMap = { closed: "เหตุการณ์ดังกล่าวได้ปิดเหตุเรียบร้อยแล้ว", following: "ขณะนี้อยู่ระหว่างติดตามผลอย่างต่อเนื่อง", transferred: "และได้ส่งต่อเรื่องให้หน่วยงานที่เกี่ยวข้องดำเนินการต่อไป" };
+      if (sMap[c.status]) endBits.push(sMap[c.status]);
+    }
+    if (endBits.length) {
+      lines.push("");
+      lines.push(endBits.join(" "));
+    }
+
+    lines.push("");
+    lines.push("จึงเรียนมาเพื่อทราบ");
+
+    return lines.join("\n");
+  }
+
+  global.ReportGenerator = { generate: generate, thaiDate: thaiDate };
+})(window);
+
+</script>
+<script>
+/* ===== screens (orchestration) ===== */
+
+(function(){
+"use strict";
+var $ = function(id){ return document.getElementById(id); };
+
+/* ================= SCREEN SWITCHING ================= */
+var SCREENS = ["Home","Report","History"];
+function showScreen(name){
+  SCREENS.forEach(function(s){ $("screen"+s).style.display = (s===name?"":"none"); });
+  $("navHome").classList.toggle("on", name==="Home");
+  $("navHistory").classList.toggle("on", name==="History");
+  window.scrollTo(0,0);
+  if(name !== "Report"){ $("actionsBar").style.display = "none"; document.body.classList.remove("has-actions"); }
+  if(name === "Home") HomeScreen.render();
+  if(name === "History") HistoryScreen.render();
+}
+$("navHome").addEventListener("click", function(e){ e.preventDefault(); showScreen("Home"); });
+$("navHistory").addEventListener("click", function(e){ e.preventDefault(); showScreen("History"); });
+
+/* ================= HOME ================= */
+var HomeScreen = (function(){
+  function render(){
+    var grid = $("homeTypegrid");
+    grid.innerHTML = "";
+    IncidentTypes.TYPES.forEach(function(t){
+      var d = document.createElement("div");
+      d.className = "typecard c-" + t.color;
+      d.innerHTML = "<div class='ic'>"+t.icon+"</div><div class='lb'>"+App.escapeHtml(t.label)+"</div>";
+      d.addEventListener("click", function(){ ReportScreen.open({type:t.id}); showScreen("Report"); });
+      grid.appendChild(d);
+    });
+
+    var all = Storage.all();
+    var today = App.todayISO();
+    var since24h = Date.now() - 24*3600000;
+    var todayCount = all.filter(function(r){ return r.core && r.core.incidentDate === today; }).length;
+    var last24 = all.filter(function(r){ return r.createdAt && new Date(r.createdAt).getTime() >= since24h; }).length;
+    var closedN = all.filter(function(r){ return r.core && r.core.status === "closed"; }).length;
+
+    $("stats").innerHTML = [["วันนี้",todayCount],["24 ชม.ล่าสุด",last24],["ทั้งหมด",all.length],["ปิดเหตุแล้ว",closedN]]
+      .map(function(s){ return "<div class='stat'><b>"+s[1]+"</b><span>"+s[0]+"</span></div>"; }).join("");
+
+    var recentBox = $("homeRecent");
+    var recent = all.slice().sort(function(a,b){ return new Date(b.createdAt||0) - new Date(a.createdAt||0); }).slice(0,6);
+    if(recent.length){
+      recentBox.innerHTML = "";
+      recent.forEach(function(r){
+        var t = IncidentTypes.getType(r.typeId);
+        var sm = App.statusMeta(r.core && r.core.status);
+        var row = document.createElement("div");
+        row.className = "incrow";
+        row.innerHTML =
+          "<div class='ic'>"+(t?t.icon:"📝")+"</div>"+
+          "<div class='m'><div class='t'>"+App.escapeHtml(t?t.label:r.typeId)+"</div>"+
+          "<div class='s'>"+App.escapeHtml((r.core&&r.core.location)||"")+" · "+App.escapeHtml((r.core&&r.core.incidentDate)||"")+"</div></div>"+
+          "<span class='badge "+sm.cls+"'>"+sm.label+"</span>";
+        row.addEventListener("click", function(){ ReportScreen.open({id:r.id}); showScreen("Report"); });
+        recentBox.appendChild(row);
+      });
+    } else {
+      recentBox.innerHTML = "<div class='empty'>ยังไม่มีรายการ</div>";
+    }
+  }
+  $("homeSeeAll").addEventListener("click", function(e){ e.preventDefault(); showScreen("History"); });
+  return { render: render };
+})();
+
+/* ================= REPORT ================= */
+var ReportScreen = (function(){
+  var record = null, reportEdited = false;
+
+  function blankRecord(tId){ return { typeId: tId, core: {}, extra: {} }; }
+
+  function open(opts){
+    opts = opts || {};
+    if(opts.id){
+      var r = Storage.getById(opts.id);
+      if(r){ record = JSON.parse(JSON.stringify(r)); reportEdited = !!r.reportEdited; showForm(record.typeId); return; }
+    }
+    if(opts.record){
+      record = opts.record;
+      if(!record.core.incidentDate) record.core.incidentDate = App.todayISO();
+      if(!record.core.incidentTime) record.core.incidentTime = App.nowHM();
+      Storage.saveDraft(record);
+      showForm(record.typeId);
+      return;
+    }
+    if(opts.type && IncidentTypes.getType(opts.type)){
+      var draft = Storage.loadDraft();
+      record = (draft && draft.typeId === opts.type) ? draft : blankRecord(opts.type);
+      if(!record.core.incidentDate) record.core.incidentDate = App.todayISO();
+      if(!record.core.incidentTime) record.core.incidentTime = App.nowHM();
+      showForm(opts.type);
+      return;
+    }
+    showPicker();
+  }
+
+  function showPicker(){
+    $("stepPick").style.display = "";
+    $("stepForm").style.display = "none";
+    $("stepPreview").style.display = "none";
+    $("actionsBar").style.display = "none";
+    document.body.classList.remove("has-actions");
+    $("topTitle").textContent = "24H Incident Report";
+    $("topSub").textContent = "เลือกประเภทเหตุการณ์เพื่อเริ่มต้น";
+    var grid = $("pickTypegrid");
+    grid.innerHTML = "";
+    IncidentTypes.TYPES.forEach(function(t){
+      var d = document.createElement("div");
+      d.className = "typecard c-" + t.color;
+      d.innerHTML = "<div class='ic'>"+t.icon+"</div><div class='lb'>"+App.escapeHtml(t.label)+"</div>";
+      d.addEventListener("click", function(){
+        record = blankRecord(t.id);
+        record.core.incidentDate = App.todayISO();
+        record.core.incidentTime = App.nowHM();
+        showForm(t.id);
+      });
+      grid.appendChild(d);
+    });
+  }
+
+  function fieldHTML(f, scope, value){
+    var val = value===undefined||value===null ? "" : value;
+    var reqStar = f.required ? " <span class='req'>*</span>" : "";
+    var unit = f.unit ? "<span class='unit'>"+App.escapeHtml(f.unit)+"</span>" : "";
+
+    if(f.type === "group") return "<div class='grouphead'>"+App.escapeHtml(f.label)+"</div>";
+    if(f.type === "textarea"){
+      return "<div class='f'><label>"+App.escapeHtml(f.label)+reqStar+"</label>"+
+        "<textarea data-scope='"+scope+"' data-key='"+f.key+"'>"+App.escapeHtml(val)+"</textarea></div>";
+    }
+    if(f.type === "select"){
+      var opts = "<option value=''>— เลือก —</option>" + f.options.map(function(o){
+        return "<option value='"+o.value+"'"+(o.value===val?" selected":"")+">"+App.escapeHtml(o.label)+"</option>";
+      }).join("");
+      return "<div class='f'><label>"+App.escapeHtml(f.label)+reqStar+"</label>"+
+        "<select data-scope='"+scope+"' data-key='"+f.key+"'>"+opts+"</select></div>";
+    }
+    if(f.type === "yesno"){
+      return "<div class='f'><label>"+App.escapeHtml(f.label)+reqStar+"</label>"+
+        "<div class='ynrow' data-scope='"+scope+"' data-key='"+f.key+"'>"+
+        "<div class='ynbtn yes"+(val==="yes"?" on":"")+"' data-val='yes'>ใช่</div>"+
+        "<div class='ynbtn no"+(val==="no"?" on":"")+"' data-val='no'>ไม่ใช่</div>"+
+        "</div></div>";
+    }
+    var inputType = f.type === "number" ? "number" : (f.type === "date" ? "date" : (f.type === "time" ? "time" : "text"));
+    return "<div class='f'><label>"+App.escapeHtml(f.label)+reqStar+unit+"</label>"+
+      "<input type='"+inputType+"' data-scope='"+scope+"' data-key='"+f.key+"' value=\""+App.escapeHtml(val)+"\"></div>";
+  }
+
+  function renderRowGroup(fields, scope, dataObj, container){
+    var i = 0;
+    while(i < fields.length){
+      var f = fields[i];
+      if(f.row){
+        var group = [f], j = i+1;
+        while(j < fields.length && fields[j].row === f.row){ group.push(fields[j]); j++; }
+        var row = document.createElement("div");
+        row.className = "row2";
+        row.innerHTML = group.map(function(gf){ return fieldHTML(gf, scope, dataObj[gf.key]); }).join("");
+        container.appendChild(row);
+        i = j;
+      } else {
+        var d = document.createElement("div");
+        d.innerHTML = fieldHTML(f, scope, dataObj[f.key]);
+        container.appendChild(d.firstChild);
+        i++;
+      }
+    }
+  }
+
+  function bindFieldEvents(container){
+    container.querySelectorAll("input,textarea,select").forEach(function(el){
+      el.addEventListener("input", onFieldChange);
+      el.addEventListener("change", onFieldChange);
+    });
+    container.querySelectorAll(".ynrow").forEach(function(row){
+      row.querySelectorAll(".ynbtn").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          var scope = row.dataset.scope, key = row.dataset.key, val = btn.dataset.val;
+          var cur = record[scope][key];
+          record[scope][key] = (cur === val) ? "" : val;
+          row.querySelectorAll(".ynbtn").forEach(function(b){ b.classList.toggle("on", b.dataset.val === record[scope][key]); });
+          autosave();
+        });
+      });
+    });
+  }
+  function onFieldChange(e){
+    var el = e.target, scope = el.dataset.scope, key = el.dataset.key;
+    if(!scope || !key) return;
+    record[scope][key] = el.value;
+    autosave();
+  }
+  function autosave(){ Storage.saveDraft(record); }
+
+  function showForm(tId){
+    var typeDef = IncidentTypes.getType(tId);
+    if(!record) record = blankRecord(tId);
+    $("stepPick").style.display = "none";
+    $("stepForm").style.display = "";
+    $("stepPreview").style.display = "none";
+    $("actionsBar").style.display = "none";
+    document.body.classList.remove("has-actions");
+    $("topTitle").textContent = typeDef.icon + " " + typeDef.label;
+    $("topSub").textContent = record.id ? "แก้ไขเหตุการณ์ " + record.id : "กรอกข้อมูลเหตุการณ์";
+
+    var coreBox = $("coreFields");
+    coreBox.innerHTML = "";
+    renderRowGroup(IncidentTypes.CORE_FIELDS, "core", record.core, coreBox);
+    bindFieldEvents(coreBox);
+
+    var extraCard = $("extraCard"), extraBox = $("extraFields");
+    extraBox.innerHTML = "";
+    if(typeDef.extra && typeDef.extra.length){
+      extraCard.style.display = "";
+      $("extraTitle").innerHTML = "รายละเอียด"+App.escapeHtml(typeDef.label)+"<span class='sub'>ไม่ต้องกรอกทุกช่อง กรอกเท่าที่ทราบ</span>";
+      renderRowGroup(typeDef.extra, "extra", record.extra, extraBox);
+      bindFieldEvents(extraBox);
+    } else {
+      extraCard.style.display = "none";
+    }
+  }
+
+  $("btnChangeType").addEventListener("click", function(){ showPicker(); });
+
+  $("btnToPreview").addEventListener("click", function(){
+    if(!record.core.incidentDate || !record.core.incidentTime){ App.toast("กรอกวันที่และเวลาที่เกิดเหตุก่อน"); return; }
+    if(!record.core.location){ App.toast("กรอกสถานที่เกิดเหตุก่อน"); return; }
+    if(!record.core.status){ App.toast("เลือกสถานะของเหตุการณ์ก่อน"); return; }
+    showPreview();
+  });
+
+  function generateText(){ return ReportGenerator.generate(record); }
+
+  function showPreview(){
+    $("stepPick").style.display = "none";
+    $("stepForm").style.display = "none";
+    $("stepPreview").style.display = "";
+    $("actionsBar").style.display = "";
+    document.body.classList.add("has-actions");
+    $("topSub").textContent = "ตรวจสอบก่อนบันทึก/ส่ง";
+    var box = $("previewText");
+    box.textContent = (record.reportText && reportEdited) ? record.reportText : generateText();
+    reportEdited = false;
+    $("editOnlyBtns").style.display = record.id ? "" : "none";
+  }
+  $("btnBackForm").addEventListener("click", function(){ showForm(record.typeId); });
+  $("btnRegenerate").addEventListener("click", function(){
+    $("previewText").textContent = generateText();
+    reportEdited = false;
+    App.toast("สร้างข้อความใหม่จากฟอร์มแล้ว");
+  });
+  $("previewText").addEventListener("input", function(){ reportEdited = true; });
+
+  function currentReportText(){ return $("previewText").textContent; }
+  $("btnCopy").addEventListener("click", function(){ App.copyText(currentReportText(), "คัดลอกรายงานแล้ว"); });
+
+  function persist(){
+    record.reportText = currentReportText();
+    record.reportEdited = reportEdited;
+    if(record.id){ Storage.update(record.id, record); } else { Storage.create(record); }
+    Storage.clearDraft();
+    return record;
+  }
+
+  $("btnSave").addEventListener("click", function(){
+    persist();
+    App.toast("บันทึกเหตุการณ์แล้ว " + (record.id||""));
+    $("topSub").textContent = "บันทึกแล้ว · " + record.id;
+  });
+  $("btnLine").addEventListener("click", function(){ persist(); App.shareToLine(currentReportText()); });
+
+  $("btnDuplicate").addEventListener("click", function(){
+    if(!record.id) return;
+    var dup = Storage.duplicate(record.id);
+    if(!dup){ App.toast("ทำซ้ำไม่สำเร็จ"); return; }
+    open({ record: dup });
+  });
+  $("btnDelete").addEventListener("click", function(){
+    if(!record.id) return;
+    if(!confirm("ลบเหตุการณ์ "+record.id+" ออกถาวร?")) return;
+    Storage.remove(record.id);
+    App.toast("ลบแล้ว");
+    showScreen("History");
+  });
+
+  return { open: open };
+})();
+
+/* ================= HISTORY ================= */
+var HistoryScreen = (function(){
+  var statusVal = "", typeVal = "", qVal = "", bound = false;
+
+  function bindOnce(){
+    if(bound) return;
+    bound = true;
+    var tf = $("typeFilter");
+    IncidentTypes.TYPES.forEach(function(t){
+      var o = document.createElement("option");
+      o.value = t.id; o.textContent = t.icon + " " + t.label;
+      tf.appendChild(o);
+    });
+    tf.addEventListener("change", function(){ typeVal = tf.value; render(); });
+
+    $("statusFilter").querySelectorAll(".filterchip").forEach(function(chip){
+      chip.addEventListener("click", function(){
+        $("statusFilter").querySelectorAll(".filterchip").forEach(function(c){ c.classList.remove("on"); });
+        chip.classList.add("on");
+        statusVal = chip.dataset.v;
+        render();
+      });
+    });
+    $("q").addEventListener("input", function(){ qVal = this.value.trim().toLowerCase(); render(); });
+
+    $("btnExport").addEventListener("click", function(){
+      var all = Storage.all();
+      if(!all.length){ App.toast("ยังไม่มีข้อมูลให้สำรอง"); return; }
+      var blob = new Blob([Storage.exportJSON()], {type:"application/json"});
+      App.downloadBlob(blob, "incident24_backup_"+App.todayISO()+".json");
+    });
+  }
+
+  function matchesQuery(r, q){
+    if(!q) return true;
+    var hay = [
+      r.id, r.core && r.core.incidentDate, r.core && r.core.incidentTime, r.core && r.core.location,
+      r.core && r.core.reporterName, r.core && r.core.receiverName, r.core && r.core.handlerName,
+      r.core && r.core.details, r.core && r.core.actionResult, JSON.stringify(r.extra || {})
+    ].join(" ").toLowerCase();
+    return hay.indexOf(q) !== -1;
+  }
+
+  function render(){
+    bindOnce();
+    var all = Storage.all().slice().sort(function(a,b){ return new Date(b.createdAt||0) - new Date(a.createdAt||0); });
+    var filtered = all.filter(function(r){
+      if(statusVal && (!r.core || r.core.status !== statusVal)) return false;
+      if(typeVal && r.typeId !== typeVal) return false;
+      if(!matchesQuery(r, qVal)) return false;
+      return true;
+    });
+    $("resultCount").textContent = "(" + filtered.length + ")";
+    var box = $("histList");
+    if(!filtered.length){ box.innerHTML = "<div class='empty'>ไม่พบรายการที่ตรงกับเงื่อนไข</div>"; return; }
+
+    box.innerHTML = "";
+    filtered.forEach(function(r){
+      var t = IncidentTypes.getType(r.typeId);
+      var sm = App.statusMeta(r.core && r.core.status);
+      var row = document.createElement("div");
+      row.className = "incrow";
+      row.innerHTML =
+        "<div class='ic'>"+(t?t.icon:"📝")+"</div>"+
+        "<div class='m'><div class='t'>"+App.escapeHtml(t?t.label:r.typeId)+" · "+App.escapeHtml(r.id||"")+"</div>"+
+        "<div class='s'>"+App.escapeHtml((r.core&&r.core.location)||"")+" · "+App.escapeHtml((r.core&&r.core.incidentDate)||"")+" "+App.escapeHtml((r.core&&r.core.incidentTime)||"")+"</div></div>"+
+        "<span class='badge "+sm.cls+"'>"+sm.label+"</span>"+
+        "<div class='rowacts'><button data-a='dup' title='ทำซ้ำ'>⧉</button><button data-a='del' title='ลบ'>🗑</button></div>";
+      row.addEventListener("click", function(e){
+        if(e.target.closest("[data-a]")) return;
+        ReportScreen.open({ id: r.id });
+        showScreen("Report");
+      });
+      row.querySelector("[data-a=dup]").addEventListener("click", function(e){
+        e.stopPropagation();
+        var dup = Storage.duplicate(r.id);
+        if(!dup){ App.toast("ทำซ้ำไม่สำเร็จ"); return; }
+        ReportScreen.open({ record: dup });
+        showScreen("Report");
+      });
+      row.querySelector("[data-a=del]").addEventListener("click", function(e){
+        e.stopPropagation();
+        if(!confirm("ลบเหตุการณ์ "+r.id+" ออกถาวร?")) return;
+        Storage.remove(r.id);
+        App.toast("ลบแล้ว");
+        render();
+      });
+      box.appendChild(row);
+    });
+  }
+
+  return { render: render };
+})();
+
+/* ================= BOOT ================= */
+showScreen("Home");
+})();
+
+</script>
+</body>
+</html>
