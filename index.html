@@ -464,7 +464,6 @@ body.has-actions{padding-bottom:90px;}
     { key: "incidentTime", label: "เวลาที่เกิดเหตุ", type: "time", required: true, row: "r1" },
     { key: "location", label: "สถานที่เกิดเหตุ", type: "text", required: true },
     { key: "reporterName", label: "ผู้แจ้งเหตุ", type: "text" },
-    { key: "handlerName", label: "ผู้ดำเนินการ", type: "text" },
     { key: "details", label: "รายละเอียดเพิ่มเติม", type: "textarea" },
     { key: "actionResult", label: "ผลการดำเนินการ", type: "textarea" }
   ];
@@ -1037,7 +1036,7 @@ body.has-actions{padding-bottom:90px;}
     if (has(c.location)) open += withPrefix(c.location, "บริเวณ");
     lines.push(open);
 
-    var goRespond = "ฝ่ายป้องกันฯ จึงรุดไปตรวจสอบที่เกิดเหตุทันที" + (has(c.handlerName) ? " โดย" + c.handlerName + "เป็นผู้ดำเนินการ" : "");
+    var goRespond = "ฝ่ายป้องกันฯ จึงรุดไปตรวจสอบที่เกิดเหตุทันที";
     lines.push("");
     lines.push(goRespond);
 
@@ -1410,7 +1409,7 @@ var HistoryScreen = (function(){
     if(!q) return true;
     var hay = [
       r.id, r.core && r.core.incidentDate, r.core && r.core.incidentTime, r.core && r.core.location,
-      r.core && r.core.reporterName, r.core && r.core.handlerName,
+      r.core && r.core.reporterName,
       r.core && r.core.details, r.core && r.core.actionResult, JSON.stringify(r.extra || {})
     ].join(" ").toLowerCase();
     return hay.indexOf(q) !== -1;
