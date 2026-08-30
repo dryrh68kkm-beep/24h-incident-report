@@ -465,7 +465,8 @@ body.has-actions{padding-bottom:90px;}
     { key: "location", label: "สถานที่เกิดเหตุ", type: "text", required: true },
     { key: "reporterName", label: "ผู้แจ้งเหตุ", type: "text" },
     { key: "details", label: "รายละเอียดเพิ่มเติม", type: "textarea" },
-    { key: "actionResult", label: "ผลการดำเนินการ", type: "textarea" }
+    { key: "actionResult", label: "ผลการดำเนินการ", type: "textarea" },
+    { key: "dutyName", label: "แจ้ง Duty / ผู้เกี่ยวข้องรับทราบ", type: "text" }
   ];
 
   function personTypeField(key) {
@@ -815,9 +816,10 @@ body.has-actions{padding-bottom:90px;}
 <script>
 /* ===== report-generator.js ===== */
 /* report-generator.js
-   สร้างข้อความรายงานจากข้อมูลที่กรอกจริงเท่านั้น (deterministic, template-based)
-   - ไม่ใช้ AI / ไม่เดาข้อมูล
-   - field ว่าง -> ตัดประโยคนั้นทิ้ง ไม่ใส่ "-"
+   สร้างข้อความรายงาน 24 ชม. แบบภาษารายงานต่อเนื่อง (deterministic, template-based)
+   - ไม่ใช้ AI / ไม่เดาข้อมูล / ไม่เดาสาเหตุ
+   - field ว่าง -> ตัดประโยคนั้นทิ้ง ไม่ใส่ "-" ไม่แสดงชื่อ field
+   - โครงสร้างเดียวกันทุกประเภทเหตุการณ์: หัวข้อ -> รับแจ้ง -> ตรวจสอบ+ดำเนินการ -> สาเหตุเบื้องต้น (ถ้ามี) -> ผลกระทบ -> ปิดท้าย
 */
 (function (global) {
   "use strict";
@@ -861,10 +863,10 @@ body.has-actions{padding-bottom:90px;}
     return s.indexOf(prefix) === 0 ? s : prefix + s;
   }
 
-  /* ---------------- ย่อหน้า "จากการตรวจสอบพบว่า" / การดำเนินการ ต่อประเภท ---------------- */
   var IT = null; // lazy bind to window.IncidentTypes เพื่อดึง option label
   function opts() { return IT || (IT = global.IncidentTypes); }
 
+  /* ---------------- ข้อมูลย่อยรายประเภท: desc / findings / actions / cause / impact ---------------- */
   var BUILDERS = {
 
     accident: function (e) {
@@ -880,20 +882,24 @@ body.has-actions{padding-bottom:90px;}
       var findings = joinClauses([
         has(e.victimName) ? "ผู้ประสบเหตุชื่อ" + e.victimName + (personLabel ? " เป็น" + personLabel : "") : (personLabel ? "ผู้ประสบเหตุเป็น" + personLabel : ""),
         has(atLabel) ? "ลักษณะอุบัติเหตุคือ" + atLabel : "",
-        has(e.cause) ? "สาเหตุเบื้องต้นคาดว่าเกิดจาก" + e.cause : "",
-        has(e.injuredPart) ? "ได้รับบาดเจ็บบริเวณ" + e.injuredPart : "",
-        has(sevLabel) ? "ระดับความรุนแรงอยู่ในระดับ" + sevLabel : "",
         has(e.areaCondition) ? "สภาพพื้นที่เกิดเหตุ" + e.areaCondition : "",
         yn(e.hasCCTV, "จุดเกิดเหตุมีกล้องวงจรปิดบันทึกภาพไว้", "จุดเกิดเหตุไม่มีกล้องวงจรปิด"),
         yn(e.hasWitness, "มีพยานเห็นเหตุการณ์", "ไม่มีพยานเห็นเหตุการณ์")
       ]);
       var actions = joinClauses([
         has(e.firstAid) ? "ให้การช่วยเหลือเบื้องต้นโดย" + e.firstAid : "",
-        yn(e.sentHospital, has(e.hospital) ? "นำส่ง" + withPrefix(e.hospital, "โรงพยาบาล") : "นำส่งโรงพยาบาล", "ไม่ได้นำส่งโรงพยาบาล"),
-        has(e.fixApproach) ? "แนวทางแก้ไขคือ" + e.fixApproach : "",
-        has(e.preventApproach) ? "แนวทางป้องกันไม่ให้เกิดซ้ำคือ" + e.preventApproach : ""
+        has(e.fixApproach) ? "ดำเนินการแก้ไขโดย" + e.fixApproach : "",
+        has(e.preventApproach) ? "กำหนดแนวทางป้องกันไม่ให้เกิดซ้ำโดย" + e.preventApproach : ""
       ]);
-      return { findings: findings, actions: actions, opening: "เกิดอุบัติเหตุ" };
+      var impact = joinClauses([
+        (has(e.injuredPart) || has(sevLabel)) ? "ผู้ประสบเหตุได้รับบาดเจ็บ" + (has(e.injuredPart) ? "บริเวณ" + e.injuredPart : "") + (has(sevLabel) ? " ระดับความรุนแรง" + sevLabel : "") : "",
+        yn(e.sentHospital, has(e.hospital) ? "ได้นำส่ง" + withPrefix(e.hospital, "โรงพยาบาล") : "ได้นำส่งโรงพยาบาล", "ไม่ได้นำส่งโรงพยาบาล")
+      ]);
+      return {
+        desc: "เกิดอุบัติเหตุ" + (has(atLabel) ? atLabel : ""),
+        findings: findings, actions: actions, impact: impact,
+        cause: e.cause, causeApplicable: true
+      };
     },
 
     patient: function (e) {
@@ -919,13 +925,19 @@ body.has-actions{padding-bottom:90px;}
       ]);
       var actions = joinClauses([
         has(e.firstAid) ? "ให้การปฐมพยาบาลเบื้องต้นโดย" + e.firstAid : "",
-        yn(e.calledAmbulance, "ได้เรียกรถพยาบาล", "ไม่ได้เรียกรถพยาบาล"),
-        has(e.respondUnit) ? "หน่วยงานที่เข้าช่วยเหลือคือ" + e.respondUnit : "",
-        has(e.hospital) ? "นำส่ง" + withPrefix(e.hospital, "โรงพยาบาล") : "",
-        yn(e.relativeReceived, "มีญาติมารับตัว", "ยังไม่มีญาติมารับตัว"),
+        yn(e.calledAmbulance, "เรียกรถพยาบาล", "ไม่ได้เรียกรถพยาบาล"),
+        has(e.respondUnit) ? "ประสาน" + e.respondUnit + "เข้าช่วยเหลือ" : "",
+        has(e.hospital) ? "นำส่ง" + withPrefix(e.hospital, "โรงพยาบาล") : ""
+      ]);
+      var impact = joinClauses([
+        yn(e.relativeReceived, "มีญาติมารับตัวกลับแล้ว", "ยังไม่มีญาติมารับตัว"),
         has(e.resultAfterHelp) ? "ผลหลังการช่วยเหลือ" + e.resultAfterHelp : ""
       ]);
-      return { findings: findings, actions: actions, opening: "พบผู้ป่วย/เจ็บป่วย" };
+      return {
+        desc: "พบผู้ป่วย/เจ็บป่วย" + (has(personLabel) ? "เป็น" + personLabel : ""),
+        findings: findings, actions: actions, impact: impact,
+        cause: null, causeApplicable: false
+      };
     },
 
     vehicle: function (e) {
@@ -946,10 +958,6 @@ body.has-actions{padding-bottom:90px;}
         has(e.crashPoint) ? "จุดเกิดเหตุอยู่" + withPrefix(e.crashPoint, "บริเวณ") : "",
         veh(1), veh(2),
         has(e.crashType) ? "ลักษณะการชนคือ" + e.crashType : "",
-        has(e.damage1) ? "ความเสียหายรถคันที่ 1 " + e.damage1 : "",
-        has(e.damage2) ? "ความเสียหายรถคันที่ 2 " + e.damage2 : "",
-        has(e.companyDamage) ? "มีความเสียหายต่อทรัพย์สินบริษัท " + e.companyDamage : "",
-        yn(e.hasInjury, "มีผู้ได้รับบาดเจ็บ", "ไม่มีผู้ได้รับบาดเจ็บ"),
         yn(e.hasCCTV, "จุดเกิดเหตุมีกล้องวงจรปิด", "จุดเกิดเหตุไม่มีกล้องวงจรปิด"),
         yn(e.hasDashcam, "มีภาพจากกล้องหน้ารถ", "ไม่มีภาพจากกล้องหน้ารถ"),
         yn(e.hasWitness, "มีพยานเห็นเหตุการณ์", "ไม่มีพยานเห็นเหตุการณ์")
@@ -959,10 +967,20 @@ body.has-actions{padding-bottom:90px;}
           "แจ้งความต่อพนักงานสอบสวน" + (has(e.policeStation) ? "สถานีตำรวจ" + e.policeStation : "") + (has(e.policeRecordNo) ? " เลขบันทึกประจำวัน" + e.policeRecordNo : ""),
           "ไม่ได้แจ้งความ"),
         has(e.insuranceCo) ? "ประสานงานกับบริษัทประกัน" + e.insuranceCo : "",
-        has(e.agreement) ? "การตกลงของคู่กรณี" + e.agreement : "",
-        has(e.lpAction) ? "ฝ่ายป้องกันฯ ดำเนินการ" + e.lpAction : ""
+        has(e.lpAction) ? "ฝ่ายป้องกันฯ ดำเนินการเพิ่มเติมโดย" + e.lpAction : ""
       ]);
-      return { findings: findings, actions: actions, opening: "เกิดอุบัติเหตุยานพาหนะ" };
+      var impact = joinClauses([
+        yn(e.hasInjury, "มีผู้ได้รับบาดเจ็บ", "ไม่มีผู้ได้รับบาดเจ็บ"),
+        has(e.damage1) ? "ความเสียหายรถคันที่ 1 " + e.damage1 : "",
+        has(e.damage2) ? "ความเสียหายรถคันที่ 2 " + e.damage2 : "",
+        has(e.companyDamage) ? "มีความเสียหายต่อทรัพย์สินบริษัท " + e.companyDamage : "",
+        has(e.agreement) ? "คู่กรณี" + e.agreement : ""
+      ]);
+      return {
+        desc: "อุบัติเหตุยานพาหนะ",
+        findings: findings, actions: actions, impact: impact,
+        cause: null, causeApplicable: false
+      };
     },
 
     fire: function (e) {
@@ -971,20 +989,25 @@ body.has-actions{padding-bottom:90px;}
         has(e.founder) ? "ผู้พบเหตุคือ" + e.founder : "",
         has(e.burningItem) ? "สิ่งที่เกิดการไหม้คือ" + e.burningItem : "",
         yn(e.hasFlame, "พบเปลวไฟ", "ไม่พบเปลวไฟ"),
-        yn(e.hasSmoke, "พบกลุ่มควัน", "ไม่พบกลุ่มควัน"),
-        has(e.cause) ? "สาเหตุเบื้องต้นคาดว่าเกิดจาก" + e.cause : "",
+        yn(e.hasSmoke, "พบกลุ่มควัน", "ไม่พบกลุ่มควัน")
+      ]);
+      var actions = joinClauses([
+        yn(e.powerCut, "ตัดกระแสไฟฟ้าบริเวณจุดเกิดเหตุ", "ไม่ได้ตัดกระแสไฟฟ้า"),
+        has(e.extinguisherUsed) ? "ใช้" + e.extinguisherUsed + "ในการระงับเหตุ" + (has(e.extinguisherCount) ? " จำนวน " + e.extinguisherCount + " ถัง" : "") : "",
+        yn(e.evacuated, "อพยพผู้ที่อยู่ในพื้นที่", "ไม่มีการอพยพ"),
+        has(e.inspectUnit) ? "ประสาน" + e.inspectUnit + "เข้าตรวจสอบ" : "",
+        has(e.fixApproach) ? "ดำเนินการแก้ไขโดย" + e.fixApproach : "",
+        has(e.preventApproach) ? "กำหนดแนวทางป้องกันซ้ำโดย" + e.preventApproach : ""
+      ]);
+      var impact = joinClauses([
         yn(e.hasInjury, "มีผู้ได้รับบาดเจ็บ", "ไม่มีผู้ได้รับบาดเจ็บ"),
         yn(e.hasDamage, "มีทรัพย์สินเสียหาย", "ไม่มีทรัพย์สินเสียหาย")
       ]);
-      var actions = joinClauses([
-        yn(e.powerCut, "ได้ทำการตัดกระแสไฟฟ้าบริเวณจุดเกิดเหตุ", "ไม่ได้ตัดกระแสไฟฟ้า"),
-        has(e.extinguisherUsed) ? "ใช้" + e.extinguisherUsed + "ในการระงับเหตุ" + (has(e.extinguisherCount) ? " จำนวน " + e.extinguisherCount + " ถัง" : "") : "",
-        yn(e.evacuated, "มีการอพยพผู้ที่อยู่ในพื้นที่", "ไม่มีการอพยพ"),
-        has(e.inspectUnit) ? "หน่วยงานที่เข้าตรวจสอบคือ" + e.inspectUnit : "",
-        has(e.fixApproach) ? "ดำเนินการแก้ไขโดย" + e.fixApproach : "",
-        has(e.preventApproach) ? "แนวทางป้องกันซ้ำคือ" + e.preventApproach : ""
-      ]);
-      return { findings: findings, actions: actions, opening: "พบเพลิงไหม้/กลุ่มควัน" };
+      return {
+        desc: "พบเพลิงไหม้/กลุ่มควัน",
+        findings: findings, actions: actions, impact: impact,
+        cause: e.cause, causeApplicable: true
+      };
     },
 
     theft: function (e) {
@@ -996,20 +1019,29 @@ body.has-actions{padding-bottom:90px;}
         has(e.itemList) ? "รายการสินค้าที่เกี่ยวข้องคือ" + e.itemList + (has(e.quantity) ? " จำนวน" + e.quantity : "") + (has(e.value) ? " มูลค่าประมาณ " + e.value + " บาท" : "") : "",
         has(e.method) ? "วิธีการก่อเหตุคือ" + e.method : "",
         has(e.foundPoint) ? "ตรวจพบที่" + withPrefix(e.foundPoint, "บริเวณ") : "",
-        has(e.detainedPoint) ? "ควบคุมตัวไว้ที่" + e.detainedPoint : "",
         yn(e.hasCCTV, "จุดเกิดเหตุมีกล้องวงจรปิดบันทึกภาพไว้", "จุดเกิดเหตุไม่มีกล้องวงจรปิด"),
         has(e.evidence) ? "หลักฐานที่พบคือ" + e.evidence : "",
         has(admitLabel) ? "ผู้ก่อเหตุ" + admitLabel : ""
       ]);
       var actions = joinClauses([
-        yn(e.paid, "ชำระค่าสินค้าเรียบร้อยแล้ว", "ไม่ได้ชำระค่าสินค้า"),
+        has(e.detainedPoint) ? "ควบคุมตัวไว้ที่" + e.detainedPoint : "",
+        yn(e.paid, "ให้ชำระค่าสินค้าเรียบร้อยแล้ว", "ยังไม่ได้ชำระค่าสินค้า"),
         yn(e.reportedPolice,
           "แจ้งความต่อพนักงานสอบสวน" + (has(e.policeStation) ? "สถานีตำรวจ" + e.policeStation : "") + (has(e.policeRecordNo) ? " เลขบันทึกประจำวัน" + e.policeRecordNo : ""),
           "ไม่ได้แจ้งความ")
       ]);
-      return { findings: findings, actions: actions, opening: "ลักทรัพย์/จับกุมผู้ก่อเหตุ" };
+      return {
+        desc: "ลักทรัพย์/จับกุมผู้ก่อเหตุ",
+        investigationIntro: "ทางฝ่ายป้องกันฯ ได้เข้าตรวจสอบและควบคุมสถานการณ์ จากการตรวจสอบพบว่า",
+        findings: findings, actions: actions, impact: "",
+        cause: null, causeApplicable: false
+      };
     }
   };
+
+  function defaultBuilt(typeLabel) {
+    return { desc: typeLabel, findings: "", actions: "", impact: "", cause: null, causeApplicable: false, investigationIntro: null };
+  }
 
   /* ---------------- ประกอบรายงานทั้งฉบับ ---------------- */
   function generate(record) {
@@ -1018,60 +1050,56 @@ body.has-actions{padding-bottom:90px;}
     var c = record.core || {};
     var e = record.extra || {};
     var builder = BUILDERS[record.typeId];
-    var built = builder ? builder(e) : { findings: "", actions: "", opening: typeLabel };
+    var built = builder ? builder(e) : defaultBuilt(typeLabel);
+
+    var desc = built.desc || typeLabel;
+    var findings = joinClauses([built.findings, c.details]);
+    var actions = built.actions || "";
+    var impact = joinClauses([built.impact, c.actionResult]);
+    var locClause = has(c.location) ? withPrefix(c.location, "บริเวณ") : "";
 
     var lines = [];
-    lines.push("รายงานเหตุการณ์ 24 ชั่วโมง");
-    lines.push("กรณี" + typeLabel);
+
+    /* 1. หัวข้อรายงาน */
+    lines.push("รายงาน 24 ชม. กรณี" + desc + locClause);
     if (record.id) lines.push("เลขที่อ้างอิง " + record.id);
     lines.push("");
 
-    /* ย่อหน้าเปิด: รับแจ้ง */
-    var open = "";
+    /* 2. สาขา + วันที่ + เวลา + การรับแจ้ง */
+    var open = "Hyper_sainoi";
     if (has(c.incidentDate) || has(c.incidentTime)) {
-      open += "วันที่ " + (has(c.incidentDate) ? thaiDate(c.incidentDate) : "") +
-        (has(c.incidentTime) ? " เวลาประมาณ " + c.incidentTime + " น." : "") + " ";
+      open += " วันที่ " + (has(c.incidentDate) ? thaiDate(c.incidentDate) : "") +
+        (has(c.incidentTime) ? " เวลาประมาณ " + c.incidentTime + " น." : "");
     }
-    open += "ฝ่ายป้องกันฯ ได้รับแจ้ง" + (has(c.reporterName) ? "จาก" + c.reporterName + " " : "") + "ว่า" + built.opening;
-    if (has(c.location)) open += withPrefix(c.location, "บริเวณ");
+    open += " ทางฝ่ายป้องกันฯ ได้รับแจ้ง" + (has(c.reporterName) ? "จาก" + c.reporterName + " " : "") + "ว่า" + desc + locClause;
     lines.push(open);
-
-    var goRespond = "ฝ่ายป้องกันฯ จึงรุดไปตรวจสอบที่เกิดเหตุทันที";
     lines.push("");
-    lines.push(goRespond);
 
-    if (has(built.findings)) {
+    /* 3. รุดไปตรวจสอบ + ผลการตรวจสอบ + การดำเนินการ (ย่อหน้าเดียวกัน) */
+    var intro = built.investigationIntro || ("ทางฝ่ายป้องกันฯ ได้รุดไปตรวจสอบที่เกิดเหตุทันที จากการตรวจสอบ" + (locClause ? locClause + " " : "") + "พบว่า");
+    var investigateLine = "";
+    if (has(findings)) investigateLine = intro + findings;
+    if (has(actions)) investigateLine += (investigateLine ? " " : "ทางฝ่ายป้องกันฯ ได้รุดไปตรวจสอบที่เกิดเหตุทันที ") + "จึงได้ทำการ" + actions;
+    if (investigateLine) {
+      lines.push(investigateLine);
       lines.push("");
-      lines.push("จากการตรวจสอบพบว่า " + built.findings);
     }
 
-    if (has(c.details)) {
+    /* 4. สาเหตุเบื้องต้น (เฉพาะประเภทที่มีแนวคิดเรื่องสาเหตุ) */
+    if (built.causeApplicable) {
+      lines.push("เบื้องต้น " + (has(built.cause) ? "คาดว่า" + built.cause : "ยังไม่สามารถระบุสาเหตุที่แน่ชัดได้ และอยู่ระหว่างการตรวจสอบจากผู้เกี่ยวข้อง"));
       lines.push("");
-      lines.push(c.details);
     }
 
-    if (has(built.actions)) {
+    /* 5. ผลกระทบ / ผู้บาดเจ็บ / ความเสียหาย */
+    if (has(impact)) {
+      lines.push("จากเหตุการณ์ดังกล่าว " + impact);
       lines.push("");
-      lines.push("ทางฝ่ายป้องกันฯ ได้ดำเนินการ " + built.actions);
     }
 
-    if (has(c.actionResult)) {
-      lines.push("");
-      lines.push("ผลการดำเนินการ " + c.actionResult);
-    }
-
-    var endBits = [];
-    if (has(c.status)) {
-      var sMap = { closed: "เหตุการณ์ดังกล่าวได้ปิดเหตุเรียบร้อยแล้ว", following: "ขณะนี้อยู่ระหว่างติดตามผลอย่างต่อเนื่อง", transferred: "และได้ส่งต่อเรื่องให้หน่วยงานที่เกี่ยวข้องดำเนินการต่อไป" };
-      if (sMap[c.status]) endBits.push(sMap[c.status]);
-    }
-    if (endBits.length) {
-      lines.push("");
-      lines.push(endBits.join(" "));
-    }
-
-    lines.push("");
-    lines.push("จึงเรียนมาเพื่อทราบ");
+    /* 6. แจ้ง Duty / ปิดท้าย */
+    lines.push("จากเหตุการณ์ที่เกิดขึ้น ได้แจ้ง" + (has(c.dutyName) ? c.dutyName + " " : "ผู้เกี่ยวข้อง") +
+      "รับทราบเหตุการณ์ที่เกิดขึ้น และจัดทำรายงานเหตุ 24 ชม. ต่อไปครับ รายละเอียดจะแจ้งทางเมลให้ทราบต่อไปครับ");
 
     return lines.join("\n");
   }
