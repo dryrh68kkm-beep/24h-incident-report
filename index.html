@@ -460,11 +460,9 @@ body.has-actions{padding-bottom:90px;}
   var CORE_FIELDS = [
     { key: "incidentDate", label: "วันที่เกิดเหตุ", type: "date", required: true, row: "r1" },
     { key: "incidentTime", label: "เวลาที่เกิดเหตุ", type: "time", required: true, row: "r1" },
-    { key: "reportedTime", label: "เวลาที่ได้รับแจ้ง", type: "time", row: "r2" },
-    { key: "endTime", label: "เวลาสิ้นสุดเหตุการณ์", type: "time", row: "r2" },
+    { key: "reportedTime", label: "เวลาที่ได้รับแจ้ง", type: "time" },
     { key: "location", label: "สถานที่เกิดเหตุ", type: "text", required: true },
-    { key: "reporterName", label: "ผู้แจ้งเหตุ", type: "text", row: "r3" },
-    { key: "receiverName", label: "ผู้รับแจ้ง", type: "text", row: "r3" },
+    { key: "reporterName", label: "ผู้แจ้งเหตุ", type: "text" },
     { key: "handlerName", label: "ผู้ดำเนินการ", type: "text" },
     { key: "details", label: "รายละเอียดเพิ่มเติม", type: "textarea" },
     { key: "actionResult", label: "ผลการดำเนินการ", type: "textarea" },
@@ -1038,7 +1036,6 @@ body.has-actions{padding-bottom:90px;}
     open += "ฝ่ายป้องกันฯ ได้รับแจ้ง" + (has(c.reporterName) ? "จาก" + c.reporterName + " " : "") + "ว่า" + built.opening;
     if (has(c.location)) open += withPrefix(c.location, "บริเวณ");
     if (has(c.reportedTime) && c.reportedTime !== c.incidentTime) open += " โดยรับแจ้งเหตุเมื่อเวลา " + c.reportedTime + " น.";
-    if (has(c.receiverName)) open += " ทั้งนี้ " + c.receiverName + " เป็นผู้รับแจ้งเหตุดังกล่าว";
     lines.push(open);
 
     var goRespond = "ฝ่ายป้องกันฯ จึงรุดไปตรวจสอบที่เกิดเหตุทันที" + (has(c.handlerName) ? " โดย" + c.handlerName + "เป็นผู้ดำเนินการ" : "");
@@ -1066,7 +1063,6 @@ body.has-actions{padding-bottom:90px;}
     }
 
     var endBits = [];
-    if (has(c.endTime)) endBits.push("เหตุการณ์ยุติเมื่อเวลา " + c.endTime + " น.");
     if (has(c.status)) {
       var sMap = { closed: "เหตุการณ์ดังกล่าวได้ปิดเหตุเรียบร้อยแล้ว", following: "ขณะนี้อยู่ระหว่างติดตามผลอย่างต่อเนื่อง", transferred: "และได้ส่งต่อเรื่องให้หน่วยงานที่เกี่ยวข้องดำเนินการต่อไป" };
       if (sMap[c.status]) endBits.push(sMap[c.status]);
@@ -1416,7 +1412,7 @@ var HistoryScreen = (function(){
     if(!q) return true;
     var hay = [
       r.id, r.core && r.core.incidentDate, r.core && r.core.incidentTime, r.core && r.core.location,
-      r.core && r.core.reporterName, r.core && r.core.receiverName, r.core && r.core.handlerName,
+      r.core && r.core.reporterName, r.core && r.core.handlerName,
       r.core && r.core.details, r.core && r.core.actionResult, JSON.stringify(r.extra || {})
     ].join(" ").toLowerCase();
     return hay.indexOf(q) !== -1;
