@@ -61,14 +61,13 @@ button{font-family:inherit;}
 .topbar nav a.on{background:#fff;color:var(--navy);}
 
 /* ===== DASHBOARD STATS ===== */
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px;}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px;}
 .stat{
   background:var(--card);border-radius:12px;padding:12px 8px;text-align:center;
   box-shadow:0 1px 2px rgba(20,30,50,.05);
 }
 .stat b{display:block;font-size:22px;font-weight:800;color:var(--navy);line-height:1.1;}
 .stat span{display:block;font-size:10.5px;color:var(--muted);margin-top:4px;line-height:1.3;}
-@media(max-width:400px){ .stats{grid-template-columns:repeat(2,1fr);} }
 
 .section-title{font-size:14px;font-weight:700;color:var(--label);margin:22px 0 10px;display:flex;justify-content:space-between;align-items:center;}
 .section-title a{font-size:12.5px;font-weight:600;color:var(--navy);}
@@ -304,12 +303,6 @@ body.has-actions{padding-bottom:90px;}
       <span class="ic">🔎</span>
       <input type="text" id="q" placeholder="ค้นหา: วันที่ / เวลา / ชื่อ / สถานที่ / ทะเบียนรถ / คำค้น">
     </div>
-    <div class="filterrow" id="statusFilter">
-      <div class="filterchip on" data-v="">ทั้งหมด</div>
-      <div class="filterchip" data-v="following">อยู่ระหว่างติดตาม</div>
-      <div class="filterchip" data-v="closed">ปิดเหตุ</div>
-      <div class="filterchip" data-v="transferred">ส่งต่อหน่วยงานอื่น</div>
-    </div>
     <div class="f" style="margin-top:12px">
       <select id="typeFilter"><option value="">ทุกประเภทเหตุการณ์</option></select>
     </div>
@@ -398,15 +391,6 @@ body.has-actions{padding-bottom:90px;}
     return pad(d.getHours()) + ":" + pad(d.getMinutes());
   }
 
-  var STATUS_META = {
-    following: { label: "อยู่ระหว่างติดตาม", cls: "st-orange" },
-    closed: { label: "ปิดเหตุ", cls: "st-green" },
-    transferred: { label: "ส่งต่อหน่วยงานอื่น", cls: "st-blue" }
-  };
-  function statusMeta(status) {
-    return STATUS_META[status] || { label: "ไม่ระบุสถานะ", cls: "st-gray" };
-  }
-
   function downloadBlob(blob, filename) {
     var a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -423,7 +407,6 @@ body.has-actions{padding-bottom:90px;}
     shareViaSystem: shareViaSystem,
     todayISO: todayISO,
     nowHM: nowHM,
-    statusMeta: statusMeta,
     downloadBlob: downloadBlob
   };
 })(window);
@@ -455,12 +438,6 @@ body.has-actions{padding-bottom:90px;}
     { value: "male", label: "ชาย" },
     { value: "female", label: "หญิง" },
     { value: "unknown", label: "ไม่ระบุ" }
-  ];
-
-  var STATUS_OPTIONS = [
-    { value: "following", label: "อยู่ระหว่างติดตาม" },
-    { value: "closed", label: "ปิดเหตุ" },
-    { value: "transferred", label: "ส่งต่อหน่วยงานอื่น" }
   ];
 
   /* ---- ฟิลด์กลางที่ทุกประเภทเหตุการณ์ต้องมี ---- */
@@ -759,7 +736,6 @@ body.has-actions{padding-bottom:90px;}
     PERSON_TYPE_OPTIONS: PERSON_TYPE_OPTIONS,
     YESNO_OPTIONS: YESNO_OPTIONS,
     GENDER_OPTIONS: GENDER_OPTIONS,
-    STATUS_OPTIONS: STATUS_OPTIONS,
     getType: getType
   };
 })(window);
@@ -817,13 +793,27 @@ body.has-actions{padding-bottom:90px;}
     return "INC-" + code + "-" + pad(n, 3);
   }
 
+  /* ---- backward compatibility: migrate ข้อมูลเก่าใน memory เท่านั้น ไม่เขียนทับ localStorage ----
+     - typeId "fall" (ลบออกจาก TYPES แล้ว รวมเข้า accident) -> typeId "accident" + extra.accidentType="fall"
+     - core/extra ที่หายไปในข้อมูลเก่า -> เติม object ว่างกันพัง */
+  function migrateRecord(record) {
+    if (!record) return record;
+    record.core = record.core || {};
+    record.extra = record.extra || {};
+    if (record.typeId === "fall") {
+      record.typeId = "accident";
+      if (!record.extra.accidentType) record.extra.accidentType = "fall";
+    }
+    return record;
+  }
+
   function all() {
-    return readList();
+    return readList().map(migrateRecord);
   }
 
   function getById(id) {
     var list = readList();
-    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return migrateRecord(list[i]);
     return null;
   }
 
@@ -864,7 +854,6 @@ body.has-actions{padding-bottom:90px;}
     delete copy.id;
     delete copy.createdAt;
     delete copy.updatedAt;
-    if (copy.core) copy.core.status = "following";
     return copy;
   }
 
@@ -879,7 +868,7 @@ body.has-actions{padding-bottom:90px;}
   function loadDraft() {
     try {
       var raw = sessionStorage.getItem(DRAFT_KEY);
-      return raw ? JSON.parse(raw) : null;
+      return raw ? migrateRecord(JSON.parse(raw)) : null;
     } catch (e) { return null; }
   }
   function clearDraft() {
@@ -950,6 +939,16 @@ body.has-actions{padding-bottom:90px;}
     if (!has(v)) return "";
     var s = String(v).trim();
     return s.indexOf(prefix) === 0 ? s : prefix + s;
+  }
+
+  /* ประกอบประโยค "จึงได้ทำการ..." โดยไม่ให้ prefix ซ้ำกับข้อความที่ builder/ผู้ใช้พิมพ์มาเอง
+     เช่น actions="ได้ประสานเจ้าหน้าที่ตำรวจ" -> "จึงได้ประสานเจ้าหน้าที่ตำรวจ" (ไม่ใช่ "จึงได้ทำการได้ประสาน...") */
+  function formatActionsClause(actions) {
+    if (!has(actions)) return "";
+    var s = String(actions).trim();
+    if (s.indexOf("ได้") === 0) return "จึงได้" + s.slice("ได้".length);
+    if (s.indexOf("จึง") === 0) return s;
+    return "จึงได้ทำการ" + s;
   }
 
   var IT = null; // lazy bind to window.IncidentTypes เพื่อดึง option label
@@ -1266,7 +1265,8 @@ body.has-actions{padding-bottom:90px;}
       var admitLabel = optLabel([{ value: "admit", label: "ยอมรับการกระทำ" }, { value: "deny", label: "ปฏิเสธการกระทำ" }], e.admitOrDeny);
       var findings = joinClauses([
         has(personLabel) ? "ผู้ก่อเหตุเป็น" + personLabel : "",
-        (has(e.suspectName) || has(e.approxAge)) ? "ชื่อ" + (e.suspectName || "ไม่ทราบชื่อ") + (has(e.approxAge) ? " อายุประมาณ " + e.approxAge + " ปี" : "") : "",
+        has(e.suspectName) ? "ชื่อ " + e.suspectName : "",
+        has(e.approxAge) ? "อายุประมาณ " + e.approxAge + " ปี" : "",
         has(e.itemList) ? "รายการสินค้าที่เกี่ยวข้องคือ" + e.itemList + (has(e.quantity) ? " จำนวน" + e.quantity : "") + (has(e.value) ? " มูลค่าประมาณ " + e.value + " บาท" : "") : "",
         has(e.method) ? "วิธีการก่อเหตุคือ" + e.method : "",
         has(e.foundPoint) ? "ตรวจพบที่" + withPrefix(e.foundPoint, "บริเวณ") : "",
@@ -1335,7 +1335,7 @@ body.has-actions{padding-bottom:90px;}
       if (built.actionsStandalone) {
         investigateLine += (investigateLine ? " " : intro.replace(/(จากการตรวจสอบ.*)?(พบว่า|พบ)$/, "").trim() + " ") + actions;
       } else {
-        investigateLine += (investigateLine ? " " : "ทางฝ่ายป้องกันฯ ได้รุดไปตรวจสอบที่เกิดเหตุทันที ") + "จึงได้ทำการ" + actions;
+        investigateLine += (investigateLine ? " " : "ทางฝ่ายป้องกันฯ ได้รุดไปตรวจสอบที่เกิดเหตุทันที ") + formatActionsClause(actions);
       }
     }
     if (investigateLine) {
@@ -1411,9 +1411,8 @@ var HomeScreen = (function(){
     var since24h = Date.now() - 24*3600000;
     var todayCount = all.filter(function(r){ return r.core && r.core.incidentDate === today; }).length;
     var last24 = all.filter(function(r){ return r.createdAt && new Date(r.createdAt).getTime() >= since24h; }).length;
-    var closedN = all.filter(function(r){ return r.core && r.core.status === "closed"; }).length;
 
-    $("stats").innerHTML = [["วันนี้",todayCount],["24 ชม.ล่าสุด",last24],["ทั้งหมด",all.length],["ปิดเหตุแล้ว",closedN]]
+    $("stats").innerHTML = [["วันนี้",todayCount],["24 ชม.ล่าสุด",last24],["ทั้งหมด",all.length]]
       .map(function(s){ return "<div class='stat'><b>"+s[1]+"</b><span>"+s[0]+"</span></div>"; }).join("");
 
     var recentBox = $("homeRecent");
@@ -1422,14 +1421,12 @@ var HomeScreen = (function(){
       recentBox.innerHTML = "";
       recent.forEach(function(r){
         var t = IncidentTypes.getType(r.typeId);
-        var sm = App.statusMeta(r.core && r.core.status);
         var row = document.createElement("div");
         row.className = "incrow";
         row.innerHTML =
           "<div class='ic'>"+(t?t.icon:"📝")+"</div>"+
           "<div class='m'><div class='t'>"+App.escapeHtml(t?t.label:r.typeId)+"</div>"+
-          "<div class='s'>"+App.escapeHtml((r.core&&r.core.location)||"")+" · "+App.escapeHtml((r.core&&r.core.incidentDate)||"")+"</div></div>"+
-          "<span class='badge "+sm.cls+"'>"+sm.label+"</span>";
+          "<div class='s'>"+App.escapeHtml((r.core&&r.core.location)||"")+" · "+App.escapeHtml((r.core&&r.core.incidentDate)||"")+"</div></div>";
         row.addEventListener("click", function(){ ReportScreen.open({id:r.id}); showScreen("Report"); });
         recentBox.appendChild(row);
       });
@@ -1455,6 +1452,7 @@ var ReportScreen = (function(){
     }
     if(opts.record){
       record = opts.record;
+      reportEdited = !!record.reportEdited;
       if(!record.core.incidentDate) record.core.incidentDate = App.todayISO();
       if(!record.core.incidentTime) record.core.incidentTime = App.nowHM();
       Storage.saveDraft(record);
@@ -1464,6 +1462,7 @@ var ReportScreen = (function(){
     if(opts.type && IncidentTypes.getType(opts.type)){
       var draft = Storage.loadDraft();
       record = (draft && draft.typeId === opts.type) ? draft : blankRecord(opts.type);
+      reportEdited = !!record.reportEdited;
       if(!record.core.incidentDate) record.core.incidentDate = App.todayISO();
       if(!record.core.incidentTime) record.core.incidentTime = App.nowHM();
       showForm(opts.type);
@@ -1488,6 +1487,7 @@ var ReportScreen = (function(){
       d.innerHTML = "<div class='ic'>"+t.icon+"</div><div class='lb'>"+App.escapeHtml(t.label)+"</div>";
       d.addEventListener("click", function(){
         record = blankRecord(t.id);
+        reportEdited = false;
         record.core.incidentDate = App.todayISO();
         record.core.incidentTime = App.nowHM();
         showForm(t.id);
@@ -1591,7 +1591,9 @@ var ReportScreen = (function(){
   function autosave(){ Storage.saveDraft(record); }
 
   function showForm(tId){
-    var typeDef = IncidentTypes.getType(tId);
+    /* กัน crash ถ้า typeId เก่า/ไม่รู้จักไม่มี typeDef (เช่นข้อมูลเก่าที่ยังไม่ได้ migrate) -> ใช้หน้าตาของ "อื่น ๆ" แทน
+       โดยไม่เปลี่ยน record.typeId เดิม เพื่อไม่ให้ข้อมูล metadata หาย */
+    var typeDef = IncidentTypes.getType(tId) || IncidentTypes.getType("other") || { icon: "📝", label: tId || "ไม่ทราบประเภท", extra: [] };
     if(!record) record = blankRecord(tId);
     $("stepPick").style.display = "none";
     $("stepForm").style.display = "";
@@ -1641,8 +1643,7 @@ var ReportScreen = (function(){
     document.body.classList.add("has-actions");
     $("topSub").textContent = "ตรวจสอบก่อนบันทึก/ส่ง";
     var box = $("previewText");
-    box.textContent = (record.reportText && reportEdited) ? record.reportText : generateText();
-    reportEdited = false;
+    box.textContent = (reportEdited && record.reportText) ? record.reportText : generateText();
     $("editOnlyBtns").style.display = record.id ? "" : "none";
   }
   $("btnBackForm").addEventListener("click", function(){ showForm(record.typeId); });
@@ -1690,7 +1691,7 @@ var ReportScreen = (function(){
 
 /* ================= HISTORY ================= */
 var HistoryScreen = (function(){
-  var statusVal = "", typeVal = "", qVal = "", bound = false;
+  var typeVal = "", qVal = "", bound = false;
 
   function bindOnce(){
     if(bound) return;
@@ -1703,14 +1704,6 @@ var HistoryScreen = (function(){
     });
     tf.addEventListener("change", function(){ typeVal = tf.value; render(); });
 
-    $("statusFilter").querySelectorAll(".filterchip").forEach(function(chip){
-      chip.addEventListener("click", function(){
-        $("statusFilter").querySelectorAll(".filterchip").forEach(function(c){ c.classList.remove("on"); });
-        chip.classList.add("on");
-        statusVal = chip.dataset.v;
-        render();
-      });
-    });
     $("q").addEventListener("input", function(){ qVal = this.value.trim().toLowerCase(); render(); });
 
     $("btnExport").addEventListener("click", function(){
@@ -1735,7 +1728,6 @@ var HistoryScreen = (function(){
     bindOnce();
     var all = Storage.all().slice().sort(function(a,b){ return new Date(b.createdAt||0) - new Date(a.createdAt||0); });
     var filtered = all.filter(function(r){
-      if(statusVal && (!r.core || r.core.status !== statusVal)) return false;
       if(typeVal && r.typeId !== typeVal) return false;
       if(!matchesQuery(r, qVal)) return false;
       return true;
@@ -1747,14 +1739,12 @@ var HistoryScreen = (function(){
     box.innerHTML = "";
     filtered.forEach(function(r){
       var t = IncidentTypes.getType(r.typeId);
-      var sm = App.statusMeta(r.core && r.core.status);
       var row = document.createElement("div");
       row.className = "incrow";
       row.innerHTML =
         "<div class='ic'>"+(t?t.icon:"📝")+"</div>"+
         "<div class='m'><div class='t'>"+App.escapeHtml(t?t.label:r.typeId)+" · "+App.escapeHtml(r.id||"")+"</div>"+
         "<div class='s'>"+App.escapeHtml((r.core&&r.core.location)||"")+" · "+App.escapeHtml((r.core&&r.core.incidentDate)||"")+" "+App.escapeHtml((r.core&&r.core.incidentTime)||"")+"</div></div>"+
-        "<span class='badge "+sm.cls+"'>"+sm.label+"</span>"+
         "<div class='rowacts'><button data-a='dup' title='ทำซ้ำ'>⧉</button><button data-a='del' title='ลบ'>🗑</button></div>";
       row.addEventListener("click", function(e){
         if(e.target.closest("[data-a]")) return;
