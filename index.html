@@ -460,7 +460,6 @@ body.has-actions{padding-bottom:90px;}
   var CORE_FIELDS = [
     { key: "incidentDate", label: "วันที่เกิดเหตุ", type: "date", required: true, row: "r1" },
     { key: "incidentTime", label: "เวลาที่เกิดเหตุ", type: "time", required: true, row: "r1" },
-    { key: "reportedTime", label: "เวลาที่ได้รับแจ้ง", type: "time" },
     { key: "location", label: "สถานที่เกิดเหตุ", type: "text", required: true },
     { key: "reporterName", label: "ผู้แจ้งเหตุ", type: "text" },
     { key: "handlerName", label: "ผู้ดำเนินการ", type: "text" },
@@ -1035,7 +1034,6 @@ body.has-actions{padding-bottom:90px;}
     }
     open += "ฝ่ายป้องกันฯ ได้รับแจ้ง" + (has(c.reporterName) ? "จาก" + c.reporterName + " " : "") + "ว่า" + built.opening;
     if (has(c.location)) open += withPrefix(c.location, "บริเวณ");
-    if (has(c.reportedTime) && c.reportedTime !== c.incidentTime) open += " โดยรับแจ้งเหตุเมื่อเวลา " + c.reportedTime + " น.";
     lines.push(open);
 
     var goRespond = "ฝ่ายป้องกันฯ จึงรุดไปตรวจสอบที่เกิดเหตุทันที" + (has(c.handlerName) ? " โดย" + c.handlerName + "เป็นผู้ดำเนินการ" : "");
