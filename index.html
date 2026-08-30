@@ -120,16 +120,18 @@ button{font-family:inherit;}
 
 .f{margin-bottom:13px;}
 .f:last-child{margin-bottom:0;}
-.f>label{display:block;font-size:13px;color:#0D1420;margin-bottom:6px;font-weight:600;}
+.f>label{display:block;font-size:13px;color:#0D1420;margin-bottom:9px;font-weight:600;}
 .req{color:var(--red);}
 .unit{font-size:12px;color:var(--muted);margin-left:6px;}
+.fhelp{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.4;}
 
 input[type=text],input[type=number],input[type=date],input[type=time],input[type=tel],textarea,select{
-  width:100%;padding:12px 13px;border:1px solid var(--border);border-radius:10px;
-  background:var(--field);color:#0D1420;font-family:inherit;font-size:15px;font-weight:500;
+  width:100%;padding:12px 13px;border:1.5px solid #C7CFDA;border-radius:10px;
+  background:#EEF1F5;color:#0D1420;font-family:inherit;font-size:15px;font-weight:500;
 }
 input:focus,textarea:focus,select:focus{outline:none;border:2px solid var(--navy);background:#fff;padding:11px 12px;}
-textarea{resize:vertical;min-height:80px;line-height:1.6;}
+textarea{resize:vertical;min-height:120px;line-height:1.6;}
+input::placeholder,textarea::placeholder{color:#7A8496;font-weight:400;}
 select{
   background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
   background-position:calc(100% - 17px) 50%, calc(100% - 12px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;
@@ -214,9 +216,9 @@ body.has-actions{padding-bottom:90px;}
   html,body{background:#F4F6F8!important;color:#1A1F29!important;}
   .card,.stat,.incrow,.typecard,.actions,.toast~*{background:#FFFFFF!important;}
   .topbar{background:#1B3A6B!important;}
-  input,textarea,select{background:#F7F8FA!important;color:#1A1F29!important;
-    -webkit-text-fill-color:#1A1F29!important;border-color:#E2E6EC!important;}
-  ::placeholder{color:#A7AEBB!important;-webkit-text-fill-color:#A7AEBB!important;}
+  input,textarea,select{background:#EEF1F5!important;color:#1A1F29!important;
+    -webkit-text-fill-color:#1A1F29!important;border-color:#C7CFDA!important;}
+  ::placeholder{color:#7A8496!important;-webkit-text-fill-color:#7A8496!important;}
   .btn{background:#FFFFFF!important;color:#1A1F29!important;}
   .btn.pri{background:#1B3A6B!important;color:#fff!important;}
   .btn.quiet{background:transparent!important;color:#8A93A3!important;}
@@ -440,14 +442,15 @@ body.has-actions{padding-bottom:90px;}
     { value: "unknown", label: "ไม่ระบุ" }
   ];
 
-  /* ---- ฟิลด์กลางที่ทุกประเภทเหตุการณ์ต้องมี ---- */
+  /* ---- ฟิลด์กลางที่ทุกประเภทเหตุการณ์ต้องมี ----
+     "รายละเอียดเพิ่มเติม"/"ผลการดำเนินการ" ถูกย้ายไปเป็นฟิลด์เฉพาะของแต่ละประเภทแทน (ไม่ให้ซ้ำความหมาย)
+     record เก่าที่ยังมี core.details/core.actionResult อยู่ ยังอ่านได้ตามปกติใน ReportGenerator เพื่อ backward compatibility
+     เพียงแต่ไม่มีช่องกรอกในฟอร์มใหม่แล้ว */
   var CORE_FIELDS = [
     { key: "incidentDate", label: "วันที่เกิดเหตุ", type: "date", required: true, row: "r1" },
     { key: "incidentTime", label: "เวลาที่เกิดเหตุ", type: "time", required: true, row: "r1" },
     { key: "location", label: "สถานที่เกิดเหตุ", type: "text", required: true },
     { key: "reporterName", label: "ผู้แจ้งเหตุ", type: "text" },
-    { key: "details", label: "รายละเอียดเพิ่มเติม", type: "textarea" },
-    { key: "actionResult", label: "ผลการดำเนินการ", type: "textarea" },
     { key: "dutyName", label: "แจ้ง Duty / ผู้เกี่ยวข้องรับทราบ", type: "text" }
   ];
 
@@ -492,14 +495,14 @@ body.has-actions{padding-bottom:90px;}
             { value: "severe", label: "รุนแรง" }
           ]
         },
-        { key: "firstAid", label: "การช่วยเหลือเบื้องต้น", type: "textarea" },
+        { key: "firstAid", label: "การช่วยเหลือเบื้องต้น", type: "textarea", placeholder: "เช่น ปฐมพยาบาลเบื้องต้นและให้พักสังเกตอาการ" },
         yesnoField("sentHospital", "นำส่งโรงพยาบาลหรือไม่"),
         { key: "hospital", label: "โรงพยาบาล", type: "text" },
         { key: "areaCondition", label: "สภาพพื้นที่เกิดเหตุ", type: "text" },
         yesnoField("hasCCTV", "มี CCTV หรือไม่"),
         yesnoField("hasWitness", "มีพยานหรือไม่"),
-        { key: "fixApproach", label: "แนวทางแก้ไข", type: "textarea" },
-        { key: "preventApproach", label: "แนวทางป้องกันไม่ให้เกิดซ้ำ", type: "textarea" }
+        { key: "fixApproach", label: "แนวทางแก้ไข", type: "textarea", placeholder: "เช่น ทำความสะอาดพื้นที่และเปลี่ยนป้ายเตือนให้ชัดเจน" },
+        { key: "preventApproach", label: "แนวทางป้องกันไม่ให้เกิดซ้ำ", type: "textarea", placeholder: "เช่น เพิ่มป้ายเตือนพื้นลื่นและตรวจสอบพื้นที่เป็นประจำ" }
       ]
     },
 
@@ -517,8 +520,8 @@ body.has-actions{padding-bottom:90px;}
         { key: "department", label: "แผนก", type: "text", row: "p2", showIf: { field: "personType", equals: "staff" } },
         { key: "division", label: "ฝ่าย", type: "text", row: "p3", showIf: { field: "personType", equals: "staff" } },
         { key: "shiftStartTime", label: "เวลาเริ่มปฏิบัติงาน", type: "time", row: "p3", showIf: { field: "personType", equals: "staff" } },
-        { key: "symptoms", label: "อาการที่พบ", type: "textarea" },
-        { key: "symptomsExtra", label: "อาการร่วม", type: "textarea" },
+        { key: "symptoms", label: "อาการที่พบ", type: "textarea", placeholder: "เช่น หายใจไม่สะดวกและหัวใจเต้นเร็ว" },
+        { key: "symptomsExtra", label: "อาการร่วม", type: "textarea", placeholder: "เช่น ความดันสูงผิดปกติ" },
         {
           key: "consciousness", label: "ระดับการรู้สึกตัว", type: "select",
           options: [
@@ -529,12 +532,12 @@ body.has-actions{padding-bottom:90px;}
         },
         yesnoField("canTalk", "สามารถพูดคุยได้หรือไม่"),
         { key: "checkedBy", label: "หน่วยงานที่เข้าตรวจอาการ", type: "text" },
-        { key: "checkResult", label: "ผลตรวจเบื้องต้น", type: "textarea" },
+        { key: "checkResult", label: "ผลตรวจเบื้องต้น", type: "textarea", placeholder: "เช่น พบความดันโลหิตสูงและอัตราการเต้นของหัวใจผิดปกติ" },
         { key: "bloodPressure", label: "ค่าความดัน (ถ้ามี)", type: "text", row: "p4" },
         { key: "heartRate", label: "อัตราการเต้นหัวใจ (ถ้ามี)", type: "text", row: "p4" },
-        { key: "firstAid", label: "การปฐมพยาบาล", type: "textarea" },
-        { key: "advice", label: "คำแนะนำจากผู้ตรวจ", type: "textarea" },
-        { key: "priorEvent", label: "เหตุการณ์/อาหาร/กิจกรรมก่อนเกิดอาการ", type: "textarea" },
+        { key: "firstAid", label: "การปฐมพยาบาล", type: "textarea", placeholder: "เช่น ปฐมพยาบาลเบื้องต้นและให้พักสังเกตอาการ" },
+        { key: "advice", label: "คำแนะนำจากผู้ตรวจ", type: "textarea", placeholder: "เช่น ให้พักผ่อนเพื่อสังเกตอาการ" },
+        { key: "priorEvent", label: "เหตุการณ์/อาหาร/กิจกรรมก่อนเกิดอาการ", type: "textarea", placeholder: "เช่น รับประทานอาหารก่อนเริ่มมีอาการ", help: "อธิบายสิ่งที่เกิดขึ้นก่อนมีอาการโดยย่อ" },
         { key: "symptomStartTime", label: "เวลาเริ่มมีอาการ", type: "time" },
         yesnoField("relativeReceived", "มีญาติมารับหรือไม่"),
         { key: "relativeReceivedTime", label: "เวลาญาติมารับ", type: "time", showIf: { field: "relativeReceived", equals: "yes" } },
@@ -570,9 +573,9 @@ body.has-actions{padding-bottom:90px;}
         { key: "v2Phone", label: "เบอร์ติดต่อ", type: "text", row: "v2c" },
 
         { key: "crashType", label: "ลักษณะการชน", type: "text" },
-        { key: "damage1", label: "ความเสียหายรถคันที่ 1", type: "textarea" },
-        { key: "damage2", label: "ความเสียหายรถคันที่ 2", type: "textarea" },
-        { key: "companyDamage", label: "ความเสียหายต่อทรัพย์สินบริษัท", type: "textarea" },
+        { key: "damage1", label: "ความเสียหายรถคันที่ 1", type: "textarea", placeholder: "เช่น กันชนหน้าบุบและไฟหน้าแตก" },
+        { key: "damage2", label: "ความเสียหายรถคันที่ 2", type: "textarea", placeholder: "เช่น ประตูข้างซ้ายบุบ" },
+        { key: "companyDamage", label: "ความเสียหายต่อทรัพย์สินบริษัท", type: "textarea", placeholder: "เช่น เสาไฟส่องสว่างของห้างเสียหาย" },
         yesnoField("hasInjury", "มีผู้บาดเจ็บหรือไม่"),
         yesnoField("hasCCTV", "มี CCTV หรือไม่"),
         yesnoField("hasDashcam", "มีกล้องหน้ารถหรือไม่"),
@@ -581,20 +584,20 @@ body.has-actions{padding-bottom:90px;}
         { key: "policeStation", label: "สถานีตำรวจ", type: "text", row: "v3" },
         { key: "policeRecordNo", label: "เลขบันทึกประจำวัน", type: "text", row: "v3" },
         { key: "insuranceCo", label: "บริษัทประกัน", type: "text" },
-        { key: "agreement", label: "การตกลงของคู่กรณี", type: "textarea" },
-        { key: "lpAction", label: "การดำเนินการของฝ่ายป้องกันฯ", type: "textarea" }
+        { key: "agreement", label: "การตกลงของคู่กรณี", type: "textarea", placeholder: "เช่น คู่กรณีตกลงชดใช้ค่าเสียหายกันเอง" },
+        { key: "lpAction", label: "การดำเนินการของฝ่ายป้องกันฯ", type: "textarea", placeholder: "เช่น บันทึกภาพเหตุการณ์และประสานบริษัทประกันภัย" }
       ]
     },
 
     {
       id: "fight", label: "ทะเลาะวิวาท", icon: "😠", color: "red",
       extra: [
-        { key: "parties", label: "ผู้เกี่ยวข้อง / คู่กรณี", type: "textarea" },
+        { key: "parties", label: "ผู้เกี่ยวข้อง / คู่กรณี", type: "textarea", placeholder: "เช่น พนักงาน 2 คนทะเลาะกันเรื่องแบ่งงาน", help: "ระบุตัวบุคคลที่เกี่ยวข้องและความสัมพันธ์ระหว่างคู่กรณีโดยย่อ" },
         { key: "cause", label: "สาเหตุเบื้องต้น", type: "text" },
         yesnoField("hasInjury", "มีผู้ได้รับบาดเจ็บหรือไม่"),
         yesnoField("hasCCTV", "มี CCTV หรือไม่"),
         yesnoField("reportedPolice", "แจ้งตำรวจหรือไม่"),
-        { key: "controlAction", label: "การระงับเหตุ / การดำเนินการ", type: "textarea" }
+        { key: "controlAction", label: "การระงับเหตุ / การดำเนินการ", type: "textarea", placeholder: "เช่น เข้าห้ามปรามและแยกคู่กรณีออกจากกัน", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" }
       ]
     },
 
@@ -607,14 +610,14 @@ body.has-actions{padding-bottom:90px;}
         personTypeField(),
         { key: "suspectName", label: "ชื่อผู้ก่อเหตุ (ถ้าทราบ)", type: "text", row: "t1" },
         { key: "approxAge", label: "อายุโดยประมาณ", type: "number", unit: "ปี", row: "t1" },
-        { key: "itemList", label: "รายการสินค้า", type: "textarea" },
+        { key: "itemList", label: "รายการสินค้า", type: "textarea", placeholder: "เช่น เสื้อผ้า 2 ชิ้น มูลค่ารวมประมาณ 500 บาท" },
         { key: "quantity", label: "จำนวน", type: "text", row: "t2" },
         { key: "value", label: "มูลค่า", type: "number", unit: "บาท", row: "t2" },
-        { key: "method", label: "วิธีการก่อเหตุ", type: "textarea" },
+        { key: "method", label: "วิธีการก่อเหตุ", type: "textarea", placeholder: "เช่น ซ่อนสินค้าไว้ในกระเป๋าแล้วเดินผ่านจุดชำระเงิน" },
         { key: "foundPoint", label: "จุดที่ตรวจพบ", type: "text" },
         { key: "detainedPoint", label: "จุดที่ควบคุมตัว", type: "text" },
         yesnoField("hasCCTV", "มี CCTV หรือไม่"),
-        { key: "evidence", label: "หลักฐานที่พบ", type: "textarea" },
+        { key: "evidence", label: "หลักฐานที่พบ", type: "textarea", placeholder: "เช่น ภาพจากกล้องวงจรปิดและสินค้าที่ตรวจพบ" },
         {
           key: "admitOrDeny", label: "ยอมรับหรือปฏิเสธ", type: "select",
           options: [{ value: "admit", label: "ยอมรับ" }, { value: "deny", label: "ปฏิเสธ" }]
@@ -644,8 +647,8 @@ body.has-actions{padding-bottom:90px;}
         yesnoField("hasDamage", "มีทรัพย์สินเสียหายหรือไม่"),
         { key: "cause", label: "สาเหตุเบื้องต้น", type: "text" },
         { key: "inspectUnit", label: "หน่วยงานที่เข้าตรวจสอบ", type: "text" },
-        { key: "fixApproach", label: "การแก้ไข", type: "textarea" },
-        { key: "preventApproach", label: "แนวทางป้องกันซ้ำ", type: "textarea" }
+        { key: "fixApproach", label: "การแก้ไข", type: "textarea", placeholder: "เช่น ดับไฟด้วยถังดับเพลิงและตัดกระแสไฟฟ้าจุดเกิดเหตุ" },
+        { key: "preventApproach", label: "แนวทางป้องกันซ้ำ", type: "textarea", placeholder: "เช่น ตรวจสอบระบบไฟฟ้าเป็นประจำและติดตั้งอุปกรณ์ป้องกัน" }
       ]
     },
 
@@ -653,17 +656,17 @@ body.has-actions{padding-bottom:90px;}
       id: "property_damage", label: "ทรัพย์สินเสียหาย", icon: "📦", color: "orange",
       extra: [
         { key: "asset", label: "ทรัพย์สินที่เสียหาย", type: "text" },
-        { key: "damage", label: "ลักษณะความเสียหาย", type: "textarea" },
+        { key: "damage", label: "ลักษณะความเสียหาย", type: "textarea", placeholder: "เช่น กระจกประตูทางเข้าแตกร้าว", help: "อธิบายลักษณะและขอบเขตความเสียหายที่พบโดยย่อ" },
         { key: "cause", label: "สาเหตุเบื้องต้น", type: "text" },
-        { key: "action", label: "การแก้ไข / การดำเนินการ", type: "textarea" }
+        { key: "action", label: "การแก้ไข / การดำเนินการ", type: "textarea", placeholder: "เช่น กั้นพื้นที่และประสานช่างเข้าซ่อมแซม", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" }
       ]
     },
     {
       id: "customer", label: "เหตุเกี่ยวกับลูกค้า", icon: "🧑‍🤝‍🧑", color: "orange",
       extra: [
         { key: "customerName", label: "ชื่อลูกค้า (ถ้าทราบ)", type: "text" },
-        { key: "issue", label: "เหตุการณ์ / ปัญหาที่เกิดขึ้น", type: "textarea" },
-        { key: "action", label: "การช่วยเหลือ / การดำเนินการ", type: "textarea" }
+        { key: "issue", label: "เหตุการณ์ / ปัญหาที่เกิดขึ้น", type: "textarea", placeholder: "เช่น ลูกค้าลื่นล้มบริเวณทางเข้าห้าง", help: "อธิบายสิ่งที่พบและลำดับเหตุการณ์โดยย่อ" },
+        { key: "action", label: "การช่วยเหลือ / การดำเนินการ", type: "textarea", placeholder: "เช่น ปฐมพยาบาลเบื้องต้นและแจ้งหัวหน้างานรับทราบ", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" }
       ]
     },
     {
@@ -671,17 +674,17 @@ body.has-actions{padding-bottom:90px;}
       extra: [
         { key: "staffName", label: "ชื่อพนักงาน", type: "text" },
         { key: "department", label: "แผนก / ฝ่าย", type: "text" },
-        { key: "issue", label: "เหตุการณ์ที่เกิดขึ้น", type: "textarea" },
-        { key: "action", label: "การดำเนินการ", type: "textarea" }
+        { key: "issue", label: "เหตุการณ์ที่เกิดขึ้น", type: "textarea", placeholder: "เช่น พนักงานมีอาการหน้ามืดและหายใจไม่สะดวกระหว่างปฏิบัติงาน", help: "อธิบายสิ่งที่พบและลำดับเหตุการณ์โดยย่อ" },
+        { key: "action", label: "การดำเนินการ", type: "textarea", placeholder: "เช่น ประสานร้านยาเพรียวเข้าตรวจอาการและให้พนักงานพักสังเกตอาการ", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" }
       ]
     },
     {
       id: "electrical", label: "ไฟฟ้า / ระบบอาคารขัดข้อง", icon: "⚡", color: "orange",
       extra: [
         { key: "equipment", label: "อุปกรณ์ / ระบบที่พบปัญหา", type: "text" },
-        { key: "symptom", label: "อาการ / ความผิดปกติที่พบ", type: "textarea" },
+        { key: "symptom", label: "อาการ / ความผิดปกติที่พบ", type: "textarea", placeholder: "เช่น ได้กลิ่นไหม้และมีประกายไฟจากตู้ควบคุมไฟฟ้า", help: "อธิบายอาการหรือความผิดปกติที่พบโดยย่อ" },
         { key: "cause", label: "สาเหตุเบื้องต้น (ถ้าทราบ)", type: "text" },
-        { key: "action", label: "การควบคุม / การแก้ไข", type: "textarea" },
+        { key: "action", label: "การควบคุม / การแก้ไข", type: "textarea", placeholder: "เช่น ตัดกระแสไฟฟ้าจุดเกิดเหตุและประสานช่างไฟเข้าตรวจสอบ", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" },
         yesnoField("hasInjury", "มีผู้ได้รับบาดเจ็บหรือไม่"),
         yesnoField("hasCustomerImpact", "มีผลกระทบต่อลูกค้าหรือไม่")
       ]
@@ -691,18 +694,18 @@ body.has-actions{padding-bottom:90px;}
       extra: [
         { key: "item", label: "สินค้า / ทรัพย์สิน", type: "text" },
         { key: "quantity", label: "จำนวน", type: "text" },
-        { key: "damage", label: "ความเสียหาย", type: "textarea" },
+        { key: "damage", label: "ความเสียหาย", type: "textarea", placeholder: "เช่น กล่องสินค้าตกจากชั้นวางและแตกเสียหาย" },
         { key: "cause", label: "สาเหตุเบื้องต้น", type: "text" },
-        { key: "action", label: "การดำเนินการ", type: "textarea" }
+        { key: "action", label: "การดำเนินการ", type: "textarea", placeholder: "เช่น เก็บกวาดพื้นที่และแจ้งแผนกที่เกี่ยวข้องดำเนินการต่อ", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" }
       ]
     },
     {
       id: "suspicious", label: "บุคคลต้องสงสัย", icon: "🕵️", color: "orange",
       extra: [
-        { key: "description", label: "ลักษณะบุคคล", type: "textarea" },
-        { key: "behavior", label: "พฤติกรรมที่พบ", type: "textarea" },
+        { key: "description", label: "ลักษณะบุคคล", type: "textarea", placeholder: "เช่น ชายไทย สูงประมาณ 170 ซม. สวมเสื้อดำ กางเกงยีนส์" },
+        { key: "behavior", label: "พฤติกรรมที่พบ", type: "textarea", placeholder: "เช่น เดินวนไปมาบริเวณชั้นวางสินค้ามูลค่าสูง" },
         yesnoField("hasCCTV", "มี CCTV หรือไม่"),
-        { key: "action", label: "การติดตาม / การดำเนินการ", type: "textarea" }
+        { key: "action", label: "การติดตาม / การดำเนินการ", type: "textarea", placeholder: "เช่น ติดตามสังเกตการณ์และแจ้งเจ้าหน้าที่รักษาความปลอดภัย", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" }
       ]
     },
     {
@@ -712,15 +715,15 @@ body.has-actions{padding-bottom:90px;}
         { key: "foundBy", label: "ผู้พบ", type: "text" },
         { key: "storage", label: "จุดเก็บรักษา / ผู้รับมอบ", type: "text" },
         { key: "owner", label: "เจ้าของทรัพย์สิน (ถ้าทราบ)", type: "text" },
-        { key: "action", label: "การดำเนินการ", type: "textarea" }
+        { key: "action", label: "การดำเนินการ", type: "textarea", placeholder: "เช่น เก็บรักษาไว้ที่จุดประชาสัมพันธ์รอเจ้าของมาติดต่อ" }
       ]
     },
     {
       id: "other", label: "อื่น ๆ", icon: "📝", color: "blue",
       extra: [
         { key: "eventName", label: "ชื่อเหตุการณ์", type: "text" },
-        { key: "finding", label: "สิ่งที่ตรวจพบ", type: "textarea" },
-        { key: "action", label: "การดำเนินการ", type: "textarea" }
+        { key: "finding", label: "สิ่งที่ตรวจพบ", type: "textarea", placeholder: "เช่น พบวัตถุต้องสงสัยบริเวณลานจอดรถ", help: "อธิบายสิ่งที่พบและลำดับเหตุการณ์โดยย่อ" },
+        { key: "action", label: "การดำเนินการ", type: "textarea", placeholder: "เช่น ตรวจสอบพื้นที่และแจ้งผู้เกี่ยวข้องรับทราบ", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" }
       ]
     }
   ];
@@ -1500,29 +1503,31 @@ var ReportScreen = (function(){
     var val = value===undefined||value===null ? "" : value;
     var reqStar = f.required ? " <span class='req'>*</span>" : "";
     var unit = f.unit ? "<span class='unit'>"+App.escapeHtml(f.unit)+"</span>" : "";
+    var help = f.help ? "<div class='fhelp'>"+App.escapeHtml(f.help)+"</div>" : "";
+    var placeholder = f.placeholder ? " placeholder=\""+App.escapeHtml(f.placeholder)+"\"" : "";
 
     if(f.type === "group") return "<div class='grouphead'>"+App.escapeHtml(f.label)+"</div>";
     if(f.type === "textarea"){
       return "<div class='f'><label>"+App.escapeHtml(f.label)+reqStar+"</label>"+
-        "<textarea data-scope='"+scope+"' data-key='"+f.key+"'>"+App.escapeHtml(val)+"</textarea></div>";
+        "<textarea data-scope='"+scope+"' data-key='"+f.key+"'"+placeholder+">"+App.escapeHtml(val)+"</textarea>"+help+"</div>";
     }
     if(f.type === "select"){
       var opts = "<option value=''>— เลือก —</option>" + f.options.map(function(o){
         return "<option value='"+o.value+"'"+(o.value===val?" selected":"")+">"+App.escapeHtml(o.label)+"</option>";
       }).join("");
       return "<div class='f'><label>"+App.escapeHtml(f.label)+reqStar+"</label>"+
-        "<select data-scope='"+scope+"' data-key='"+f.key+"'>"+opts+"</select></div>";
+        "<select data-scope='"+scope+"' data-key='"+f.key+"'>"+opts+"</select>"+help+"</div>";
     }
     if(f.type === "yesno"){
       return "<div class='f'><label>"+App.escapeHtml(f.label)+reqStar+"</label>"+
         "<div class='ynrow' data-scope='"+scope+"' data-key='"+f.key+"'>"+
         "<div class='ynbtn yes"+(val==="yes"?" on":"")+"' data-val='yes'>ใช่</div>"+
         "<div class='ynbtn no"+(val==="no"?" on":"")+"' data-val='no'>ไม่ใช่</div>"+
-        "</div></div>";
+        "</div>"+help+"</div>";
     }
     var inputType = f.type === "number" ? "number" : (f.type === "date" ? "date" : (f.type === "time" ? "time" : "text"));
     return "<div class='f'><label>"+App.escapeHtml(f.label)+reqStar+unit+"</label>"+
-      "<input type='"+inputType+"' data-scope='"+scope+"' data-key='"+f.key+"' value=\""+App.escapeHtml(val)+"\"></div>";
+      "<input type='"+inputType+"' data-scope='"+scope+"' data-key='"+f.key+"' value=\""+App.escapeHtml(val)+"\""+placeholder+">"+help+"</div>";
   }
 
   function renderRowGroup(fields, scope, dataObj, container){
