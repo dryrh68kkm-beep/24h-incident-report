@@ -175,6 +175,9 @@ select{
 .btn.quiet{background:transparent;border-color:transparent;color:var(--muted);}
 .dashed{width:100%;padding:13px;border:1.5px dashed var(--border);border-radius:10px;background:transparent;color:var(--navy);font-size:13.5px;font-weight:600;cursor:pointer;margin-top:10px;}
 
+.formtop{margin:10px 0 4px;}
+.formtop .btn.quiet{width:auto;flex:none;padding:6px 2px;color:var(--navy);font-size:13.5px;font-weight:700;}
+
 /* fixed bottom action bar */
 .actions{
   position:fixed;left:0;right:0;bottom:0;z-index:60;background:var(--card);
@@ -261,6 +264,9 @@ body.has-actions{padding-bottom:90px;}
 
     <div id="stepForm" style="display:none">
       <div class="steps"><i class="on"></i><i></i></div>
+      <div class="formtop">
+        <button class="btn quiet" id="btnChangeType">← เปลี่ยนประเภท</button>
+      </div>
       <div class="card">
         <h2>ข้อมูลพื้นฐาน<span class="sub">ทุกประเภทเหตุการณ์ต้องกรอก</span></h2>
         <div id="coreFields"></div>
@@ -270,7 +276,6 @@ body.has-actions{padding-bottom:90px;}
         <div id="extraFields"></div>
       </div>
       <div class="btns">
-        <button class="btn quiet" id="btnChangeType">เปลี่ยนประเภท</button>
         <button class="btn pri" id="btnToPreview">ดูตัวอย่างรายงาน →</button>
       </div>
     </div>
