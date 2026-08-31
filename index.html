@@ -225,7 +225,10 @@ body.has-actions{padding-bottom:90px;}
   .actions .sec{background:#F7F8FA!important;color:#1A1F29!important;}
   .actions .pri{background:#1B3A6B!important;color:#fff!important;}
   .preview{background:#F7F8FA!important;color:#1A1F29!important;}
-  .ynbtn{background:#EBEEF2!important;color:#0D1420!important;border-color:#B7C0CE!important;}
+  .ynbtn:not(.on){background:#EBEEF2!important;color:#0D1420!important;border-color:#B7C0CE!important;}
+  .ynbtn.on{background:#1B3A6B!important;color:#fff!important;border-color:transparent!important;}
+  .ynbtn.on.yes{background:#D0342C!important;}
+  .ynbtn.on.no{background:#1E7D46!important;}
   .filterchip{background:#FFFFFF!important;color:#4B5563!important;}
   .filterchip.on{background:#1B3A6B!important;color:#fff!important;}
   .rowacts button{background:#FFFFFF!important;color:#8A93A3!important;}
