@@ -455,8 +455,20 @@ body.has-actions{padding-bottom:90px;}
     { key: "location", label: "สถานที่เกิดเหตุ", type: "text", required: true },
     { key: "reporterName", label: "ผู้แจ้งเหตุ", type: "text" },
     { key: "dutyName", label: "ชื่อ Duty ที่รับทราบ", type: "text", row: "duty1", placeholder: "เช่น คุณสมชาย ใจดี" },
-    { key: "dutyPosition", label: "ตำแหน่ง Duty", type: "text", row: "duty1", placeholder: "เช่น C. (หัวหน้าแผนก) หรือ M. (ผู้จัดการ)", help: "หัวหน้าแผนกใช้ \"C.\" ผู้จัดการใช้ \"M.\"" },
-    { key: "dutyShift", label: "รอบ Duty", type: "text", row: "duty2", placeholder: "เช่น รอบเช้า หรือ รอบบ่าย" },
+    {
+      key: "dutyPosition", label: "ตำแหน่ง Duty", type: "select", row: "duty1",
+      options: [
+        { value: "C.", label: "C. (หัวหน้าแผนก)" },
+        { value: "M.", label: "M. (ผู้จัดการ)" }
+      ]
+    },
+    {
+      key: "dutyShift", label: "รอบ Duty", type: "select", row: "duty2",
+      options: [
+        { value: "รอบเช้า", label: "รอบเช้า" },
+        { value: "รอบบ่าย", label: "รอบบ่าย" }
+      ]
+    },
     { key: "escalateTo", label: "ผู้ที่ต้องประสานแจ้งต่อ (ถ้ามี)", type: "text", row: "duty2", placeholder: "เช่น C8" }
   ];
 
