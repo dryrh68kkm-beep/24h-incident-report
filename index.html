@@ -454,7 +454,7 @@ body.has-actions{padding-bottom:90px;}
     { key: "incidentTime", label: "เวลาที่เกิดเหตุ", type: "time", required: true, row: "r1" },
     { key: "location", label: "สถานที่เกิดเหตุ", type: "text", required: true },
     { key: "reporterName", label: "ผู้แจ้งเหตุ", type: "text" },
-    { key: "dutyName", label: "แจ้ง Duty / ผู้เกี่ยวข้องรับทราบ", type: "text" }
+    { key: "dutyName", label: "แจ้ง Duty / ผู้เกี่ยวข้องรับทราบ", type: "text", placeholder: "เช่น คุณสมชาย ใจดี C. Duty รอบเช้า", help: "ระบุชื่อ ตำแหน่ง และรอบเวร เช่น หัวหน้าแผนกใช้ \"C.\" ผู้จัดการใช้ \"M.\" พร้อมระบุรอบเช้าหรือบ่าย" }
   ];
 
   function personTypeField(key) {
@@ -546,9 +546,9 @@ body.has-actions{padding-bottom:90px;}
         { key: "relativeReceivedTime", label: "เวลาญาติมารับ", type: "time", showIf: { field: "relativeReceived", equals: "yes" } },
         yesnoField("sentHospital", "นำส่งโรงพยาบาลหรือไม่"),
         { key: "hospital", label: "โรงพยาบาล", type: "text", showIf: { field: "sentHospital", equals: "yes" } },
-        { key: "dutyNamePatient", label: "ชื่อ Duty ที่รับทราบ", type: "text", row: "p5" },
-        { key: "dutyPosition", label: "ตำแหน่ง Duty", type: "text", row: "p5" },
-        { key: "dutyShift", label: "รอบ Duty", type: "text" },
+        { key: "dutyNamePatient", label: "ชื่อ Duty ที่รับทราบ", type: "text", row: "p5", placeholder: "เช่น คุณสมชาย ใจดี" },
+        { key: "dutyPosition", label: "ตำแหน่ง Duty", type: "text", row: "p5", placeholder: "เช่น C. (หัวหน้าแผนก) หรือ M. (ผู้จัดการ)" },
+        { key: "dutyShift", label: "รอบ Duty", type: "text", placeholder: "เช่น รอบเช้า หรือ รอบบ่าย" },
         { key: "escalateTo", label: "ผู้ที่ต้องประสานแจ้งต่อ (เช่น C8)", type: "text" }
       ]
     },
