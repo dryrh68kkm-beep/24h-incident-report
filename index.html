@@ -121,6 +121,15 @@ button{font-family:inherit;}
 .grouphead{font-size:12.5px;font-weight:700;color:var(--navy);margin:14px 0 8px;padding-top:10px;border-top:1px dashed var(--border);}
 .grouphead:first-child{margin-top:0;padding-top:0;border-top:none;}
 
+.recipientrow{border:1px solid var(--border);border-radius:10px;padding:14px 40px 14px 14px;margin-bottom:10px;position:relative;}
+.recipientrow:last-child{margin-bottom:0;}
+.recipientrow .row2{gap:10px;margin-bottom:13px;}
+.recipientrow .f:last-child{margin-bottom:0;}
+.recipientrow .rmbtn{
+  position:absolute;top:10px;right:10px;border:none;background:transparent;
+  color:var(--muted);font-size:18px;line-height:1;cursor:pointer;padding:4px;
+}
+
 .f{margin-bottom:13px;}
 .f:last-child{margin-bottom:0;}
 .f>label{display:block;font-size:13px;color:#0D1420;margin-bottom:9px;font-weight:600;}
@@ -281,6 +290,14 @@ body.has-actions{padding-bottom:90px;}
         </div>
         <div id="coreFields"></div>
       </div>
+      <div class="card" id="recipientsCard">
+        <div class="cardhead">
+          <h2>ผู้รับทราบเหตุการณ์<span class="sub">เพิ่มได้มากกว่า 1 คน เช่น SGM, Manager, OSX Duty</span></h2>
+          <button type="button" class="clearbtn" id="btnClearRecipients">ล้างข้อมูล</button>
+        </div>
+        <div id="recipientsList"></div>
+        <button type="button" class="dashed" id="btnAddRecipient">+ เพิ่มผู้รับทราบ</button>
+      </div>
       <div class="card" id="extraCard" style="display:none">
         <div class="cardhead">
           <h2 id="extraTitle">รายละเอียดเฉพาะเหตุการณ์</h2>
@@ -439,7 +456,7 @@ body.has-actions{padding-bottom:90px;}
   var PERSON_TYPE_OPTIONS = [
     { value: "customer", label: "ลูกค้า" },
     { value: "staff", label: "พนักงาน" },
-    { value: "tenant", label: "ผู้เช่า" },
+    { value: "tenant", label: "ร้านค้าเช่า" },
     { value: "outsider", label: "บุคคลภายนอก" }
   ];
 
@@ -454,38 +471,85 @@ body.has-actions{padding-bottom:90px;}
     { value: "unknown", label: "ไม่ระบุ" }
   ];
 
+  /* ตำแหน่งของผู้รับทราบเหตุการณ์ (ระบบผู้รับทราบหลายคน ดู core.recipients) */
+  var RECIPIENT_POSITION_OPTIONS = [
+    { value: "SGM", label: "SGM" },
+    { value: "Manager", label: "Manager" },
+    { value: "OSX Duty", label: "OSX Duty" },
+    { value: "C8", label: "C8" },
+    { value: "Area LP", label: "Area LP" },
+    { value: "other", label: "อื่น ๆ" }
+  ];
+
+  /* โซน/พื้นที่จอดรถจริงของสาขา — ยังไม่มีรายการจริง ให้ใช้ "อื่น ๆ" ไปก่อนจนกว่าจะได้ข้อมูลจากสาขา */
+  var PARKING_ZONE_OPTIONS = [
+    { value: "other", label: "อื่น ๆ" }
+  ];
+
+  /* ชนิด/รายการถังดับเพลิงจริงของสาขา — ยังไม่มีรายการจริง ให้ใช้ "อื่น ๆ" ไปก่อนจนกว่าจะได้ข้อมูลจากสาขา */
+  var FIRE_EXTINGUISHER_OPTIONS = [
+    { value: "other", label: "อื่น ๆ" }
+  ];
+
+  var PRODUCT_GROUP_OPTIONS = [
+    { value: "hardline", label: "Hardline" },
+    { value: "homeline", label: "Homeline" },
+    { value: "softline", label: "Softline" },
+    { value: "freshfood", label: "Fresh Food" },
+    { value: "dryfood", label: "Dry Food" },
+    { value: "pharmacy", label: "Pharmacy" },
+    { value: "other", label: "อื่น ๆ" }
+  ];
+
+  var CUSTOMER_ISSUE_OPTIONS = [
+    { value: "cart", label: "รถเข็น" },
+    { value: "fall", label: "ลื่นล้ม" },
+    { value: "indecent", label: "อนาจาร" },
+    { value: "secret_photo", label: "แอบถ่าย" },
+    { value: "price_tag", label: "ป้ายราคา" },
+    { value: "expired", label: "สินค้าหมดอายุ" },
+    { value: "tenant", label: "ร้านค้าเช่า" },
+    { value: "help", label: "ขอความช่วยเหลือ" },
+    { value: "other", label: "อื่น ๆ" }
+  ];
+
+  var DISCIPLINE_OPTIONS = [
+    { value: "warn_verbal", label: "ตักเตือน" },
+    { value: "warn_written", label: "หนังสือเตือน" },
+    { value: "suspend", label: "พักงาน" },
+    { value: "hr", label: "ส่ง HR พิจารณา" },
+    { value: "other", label: "อื่น ๆ" }
+  ];
+
   /* ---- ฟิลด์กลางที่ทุกประเภทเหตุการณ์ต้องมี ----
-     "รายละเอียดเพิ่มเติม"/"ผลการดำเนินการ" ถูกย้ายไปเป็นฟิลด์เฉพาะของแต่ละประเภทแทน (ไม่ให้ซ้ำความหมาย)
-     record เก่าที่ยังมี core.details/core.actionResult อยู่ ยังอ่านได้ตามปกติใน ReportGenerator เพื่อ backward compatibility
-     เพียงแต่ไม่มีช่องกรอกในฟอร์มใหม่แล้ว */
+     ผู้รับทราบเหตุการณ์ (ชื่อ Duty เดิม) ย้ายไปใช้ระบบ "ผู้รับทราบหลายคน" (core.recipients)
+     แสดงผลด้วย UI เฉพาะ ไม่ใช่ field schema ธรรมดา — ดู renderRecipients() ใน screens.js
+     record เก่าที่ยังมี core.dutyName/dutyPosition/dutyShift/escalateTo อยู่ ยังอ่านได้ตามปกติ
+     (Storage.migrateRecord แปลงเป็น recipient ใน memory ให้อัตโนมัติ) เพียงแต่ไม่มีช่องกรอกแบบเดิมในฟอร์มใหม่แล้ว */
   var CORE_FIELDS = [
     { key: "incidentDate", label: "วันที่เกิดเหตุ", type: "date", required: true, row: "r1" },
     { key: "incidentTime", label: "เวลาที่เกิดเหตุ", type: "time", required: true, row: "r1" },
     { key: "location", label: "สถานที่เกิดเหตุ", type: "text", required: true },
-    { key: "reporterName", label: "ผู้แจ้งเหตุ", type: "text" },
-    { key: "dutyName", label: "ชื่อ Duty ที่รับทราบ", type: "text", row: "duty1", placeholder: "เช่น คุณสมชาย ใจดี" },
-    {
-      key: "dutyPosition", label: "ตำแหน่ง Duty", type: "select", row: "duty1",
-      options: [
-        { value: "C.", label: "C. (หัวหน้าแผนก)" },
-        { value: "M.", label: "M. (ผู้จัดการ)" }
-      ]
-    },
-    {
-      key: "dutyShift", label: "รอบ Duty", type: "select", row: "duty2",
-      options: [
-        { value: "รอบเช้า", label: "รอบเช้า" },
-        { value: "รอบบ่าย", label: "รอบบ่าย" }
-      ]
-    },
-    { key: "escalateTo", label: "ผู้ที่ต้องประสานแจ้งต่อ (ถ้ามี)", type: "text", row: "duty2", placeholder: "เช่น C8" }
+    { key: "reporterName", label: "ผู้แจ้งเหตุ", type: "text" }
   ];
 
   function personTypeField(key) {
     return { key: key || "personType", label: "ประเภทบุคคล", type: "select", options: PERSON_TYPE_OPTIONS };
   }
+  /* ฟิลด์เสริมตามประเภทบุคคล: แผนก/ฝ่าย (พนักงาน) หรือ ชื่อร้านค้า (ร้านค้าเช่า) — เปิดเฉพาะที่เกี่ยวข้อง */
+  function personDetailFields(personKey) {
+    var pk = personKey || "personType";
+    return [
+      { key: "department", label: "แผนก", type: "text", row: "persondept", showIf: { field: pk, equals: "staff" } },
+      { key: "division", label: "ฝ่าย", type: "text", row: "persondept", showIf: { field: pk, equals: "staff" } },
+      { key: "shopName", label: "ชื่อร้านค้า", type: "text", showIf: { field: pk, equals: "tenant" } }
+    ];
+  }
   function yesnoField(key, label) {
     return { key: key, label: label, type: "yesno" };
+  }
+  function moreInfoField() {
+    return { key: "moreInfo", label: "ข้อมูลเพิ่มเติม (ถ้ามี)", type: "textarea", placeholder: "รายละเอียดอื่นที่ยังไม่ครอบคลุมในช่องด้านบน" };
   }
 
   /* ---- ประเภทเหตุการณ์ ---- */
@@ -498,7 +562,8 @@ body.has-actions{padding-bottom:90px;}
       color: "red",
       extra: [
         { key: "victimName", label: "ชื่อผู้ประสบเหตุ", type: "text" },
-        personTypeField(),
+        personTypeField()
+      ].concat(personDetailFields()).concat([
         {
           key: "accidentType", label: "ลักษณะอุบัติเหตุ", type: "select",
           options: [
@@ -511,7 +576,7 @@ body.has-actions{padding-bottom:90px;}
             { value: "other", label: "อื่น ๆ" }
           ]
         },
-        { key: "accidentTypeOther", label: "ระบุลักษณะอุบัติเหตุ (กรณีอื่น ๆ)", type: "text" },
+        { key: "accidentTypeOther", label: "ระบุลักษณะอุบัติเหตุ", type: "text", showIf: { field: "accidentType", equals: "other" } },
         { key: "cause", label: "สาเหตุเบื้องต้น", type: "text" },
         { key: "injuredPart", label: "อวัยวะที่ได้รับบาดเจ็บ", type: "text", row: "a1" },
         {
@@ -524,53 +589,46 @@ body.has-actions{padding-bottom:90px;}
         },
         { key: "firstAid", label: "การช่วยเหลือเบื้องต้น", type: "textarea", placeholder: "เช่น ปฐมพยาบาลเบื้องต้นและให้พักสังเกตอาการ" },
         yesnoField("sentHospital", "นำส่งโรงพยาบาลหรือไม่"),
-        { key: "hospital", label: "โรงพยาบาล", type: "text" },
+        { key: "hospital", label: "ชื่อโรงพยาบาล", type: "text", showIf: { field: "sentHospital", equals: "yes" } },
         { key: "areaCondition", label: "สภาพพื้นที่เกิดเหตุ", type: "text" },
+        yesnoField("areaDamage", "พื้นที่/ทรัพย์สินบริเวณเกิดเหตุมีความเสียหายหรือไม่"),
+        { key: "areaDamageDetail", label: "รายละเอียดความเสียหาย", type: "textarea", showIf: { field: "areaDamage", equals: "yes" } },
         yesnoField("hasCCTV", "มี CCTV หรือไม่"),
-        yesnoField("hasWitness", "มีพยานหรือไม่"),
         { key: "fixApproach", label: "แนวทางแก้ไข", type: "textarea", placeholder: "เช่น ทำความสะอาดพื้นที่และเปลี่ยนป้ายเตือนให้ชัดเจน" },
-        { key: "preventApproach", label: "แนวทางป้องกันไม่ให้เกิดซ้ำ", type: "textarea", placeholder: "เช่น เพิ่มป้ายเตือนพื้นลื่นและตรวจสอบพื้นที่เป็นประจำ" }
-      ]
+        { key: "preventApproach", label: "แนวทางป้องกันไม่ให้เกิดซ้ำ", type: "textarea", placeholder: "เช่น เพิ่มป้ายเตือนพื้นลื่นและตรวจสอบพื้นที่เป็นประจำ" },
+        moreInfoField()
+      ])
     },
 
     {
       id: "patient",
-      label: "พบผู้ป่วย / เจ็บป่วย",
+      label: "พบผู้บาดเจ็บ / เจ็บป่วย",
       icon: "🚑",
       color: "red",
       extra: [
-        { key: "patientName", label: "ชื่อผู้ป่วย", type: "text" },
-        personTypeField(),
+        { key: "patientName", label: "ชื่อผู้ป่วย/ผู้บาดเจ็บ", type: "text" },
+        personTypeField()
+      ].concat(personDetailFields()).concat([
         { key: "gender", label: "เพศ", type: "select", options: GENDER_OPTIONS, row: "p1" },
         { key: "approxAge", label: "อายุ", type: "number", unit: "ปี", row: "p1" },
-        { key: "workDuration", label: "อายุงาน", type: "text", row: "p2", showIf: { field: "personType", equals: "staff" } },
-        { key: "department", label: "แผนก", type: "text", row: "p2", showIf: { field: "personType", equals: "staff" } },
-        { key: "division", label: "ฝ่าย", type: "text", row: "p3", showIf: { field: "personType", equals: "staff" } },
-        { key: "shiftStartTime", label: "เวลาเริ่มปฏิบัติงาน", type: "time", row: "p3", showIf: { field: "personType", equals: "staff" } },
         { key: "symptoms", label: "อาการที่พบ", type: "textarea", placeholder: "เช่น หายใจไม่สะดวกและหัวใจเต้นเร็ว" },
-        { key: "symptomsExtra", label: "อาการร่วม", type: "textarea", placeholder: "เช่น ความดันสูงผิดปกติ" },
         {
-          key: "consciousness", label: "ระดับการรู้สึกตัว", type: "select",
+          key: "consciousness", label: "ระดับอาการ", type: "select",
           options: [
             { value: "alert", label: "รู้สึกตัวดี" },
-            { value: "drowsy", label: "ซึมลง" },
+            { value: "better", label: "อาการดีขึ้น" },
+            { value: "worse", label: "อาการไม่ดีขึ้น" },
             { value: "unconscious", label: "ไม่รู้สึกตัว" }
           ]
         },
-        yesnoField("canTalk", "สามารถพูดคุยได้หรือไม่"),
-        { key: "checkedBy", label: "หน่วยงานที่เข้าตรวจอาการ", type: "text" },
-        { key: "checkResult", label: "ผลตรวจเบื้องต้น", type: "textarea", placeholder: "เช่น พบความดันโลหิตสูงและอัตราการเต้นของหัวใจผิดปกติ" },
-        { key: "bloodPressure", label: "ค่าความดัน (ถ้ามี)", type: "text", row: "p4" },
-        { key: "heartRate", label: "อัตราการเต้นหัวใจ (ถ้ามี)", type: "text", row: "p4" },
-        { key: "firstAid", label: "การปฐมพยาบาล", type: "textarea", placeholder: "เช่น ปฐมพยาบาลเบื้องต้นและให้พักสังเกตอาการ" },
-        { key: "advice", label: "คำแนะนำจากผู้ตรวจ", type: "textarea", placeholder: "เช่น ให้พักผ่อนเพื่อสังเกตอาการ" },
-        { key: "priorEvent", label: "เหตุการณ์/อาหาร/กิจกรรมก่อนเกิดอาการ", type: "textarea", placeholder: "เช่น รับประทานอาหารก่อนเริ่มมีอาการ", help: "อธิบายสิ่งที่เกิดขึ้นก่อนมีอาการโดยย่อ" },
-        { key: "symptomStartTime", label: "เวลาเริ่มมีอาการ", type: "time" },
-        yesnoField("relativeReceived", "มีญาติมารับหรือไม่"),
-        { key: "relativeReceivedTime", label: "เวลาญาติมารับ", type: "time", showIf: { field: "relativeReceived", equals: "yes" } },
+        { key: "firstAid", label: "การปฐมพยาบาล / การตรวจเบื้องต้น", type: "textarea", placeholder: "เช่น ร้านยาเพรียวตรวจความดัน 150/90 mmHg อัตราการเต้นหัวใจ 120 ครั้ง/นาที และแนะนำให้พักสังเกตอาการ", help: "พิมพ์ผลตรวจ (ความดัน/ชีพจร) เฉพาะกรณีมีการตรวจจริง" },
+        { key: "checkedBy", label: "หน่วยงานที่เข้าช่วยเหลือ", type: "text", placeholder: "เช่น ร้านยาเพรียว" },
         yesnoField("sentHospital", "นำส่งโรงพยาบาลหรือไม่"),
-        { key: "hospital", label: "โรงพยาบาล", type: "text", showIf: { field: "sentHospital", equals: "yes" } }
-      ]
+        { key: "hospital", label: "ชื่อโรงพยาบาล", type: "text", showIf: { field: "sentHospital", equals: "yes" } },
+        yesnoField("relativeReceived", "มีญาติมารับหรือไม่"),
+        { key: "resultAfterHelp", label: "ผลหลังช่วยเหลือ", type: "textarea", placeholder: "เช่น อาการดีขึ้น ญาติรับตัวกลับบ้านเวลา 14.30 น." },
+        moreInfoField()
+      ])
     },
 
     {
@@ -579,36 +637,43 @@ body.has-actions{padding-bottom:90px;}
       icon: "🚗",
       color: "red",
       extra: [
+        {
+          key: "parkingZone", label: "โซน / พื้นที่จอดรถ", type: "select",
+          options: PARKING_ZONE_OPTIONS
+        },
+        { key: "parkingZoneOther", label: "ระบุโซน/พื้นที่จอดรถ", type: "text", showIf: { field: "parkingZone", equals: "other" } },
+
         { key: "v1Group", label: "รถคันที่ 1", type: "group" },
         { key: "v1Type", label: "ประเภทรถ", type: "text", row: "v1a" },
         { key: "v1Brand", label: "ยี่ห้อ / รุ่น", type: "text", row: "v1a" },
         { key: "v1Color", label: "สี", type: "text", row: "v1b" },
         { key: "v1Plate", label: "ทะเบียน", type: "text", row: "v1b" },
-        { key: "v1Driver", label: "ชื่อผู้ขับขี่", type: "text", row: "v1c" },
-        { key: "v1Phone", label: "เบอร์ติดต่อ", type: "text", row: "v1c" },
+        { key: "v1Driver", label: "ชื่อผู้ขับขี่", type: "text" },
+        { key: "v1DamageZone", label: "ตำแหน่ง/โซนความเสียหาย", type: "text", row: "v1d" },
+        { key: "v1DamageDetail", label: "รายละเอียดความเสียหาย", type: "textarea", placeholder: "เช่น กันชนหน้าบุบและไฟหน้าแตก" },
+        { key: "v1MoreInfo", label: "ข้อมูลเพิ่มเติมของผู้ขับขี่/ลูกค้า", type: "textarea" },
 
         { key: "v2Group", label: "รถคันที่ 2", type: "group" },
         { key: "v2Type", label: "ประเภทรถ", type: "text", row: "v2a" },
         { key: "v2Brand", label: "ยี่ห้อ / รุ่น", type: "text", row: "v2a" },
         { key: "v2Color", label: "สี", type: "text", row: "v2b" },
         { key: "v2Plate", label: "ทะเบียน", type: "text", row: "v2b" },
-        { key: "v2Driver", label: "ชื่อผู้ขับขี่", type: "text", row: "v2c" },
-        { key: "v2Phone", label: "เบอร์ติดต่อ", type: "text", row: "v2c" },
+        { key: "v2Driver", label: "ชื่อผู้ขับขี่", type: "text" },
+        { key: "v2DamageZone", label: "ตำแหน่ง/โซนความเสียหาย", type: "text", row: "v2d" },
+        { key: "v2DamageDetail", label: "รายละเอียดความเสียหาย", type: "textarea", placeholder: "เช่น ประตูข้างซ้ายบุบ" },
+        { key: "v2MoreInfo", label: "ข้อมูลเพิ่มเติมของผู้ขับขี่/ลูกค้า", type: "textarea" },
 
         { key: "crashType", label: "ลักษณะการชน", type: "text" },
-        { key: "damage1", label: "ความเสียหายรถคันที่ 1", type: "textarea", placeholder: "เช่น กันชนหน้าบุบและไฟหน้าแตก" },
-        { key: "damage2", label: "ความเสียหายรถคันที่ 2", type: "textarea", placeholder: "เช่น ประตูข้างซ้ายบุบ" },
         { key: "companyDamage", label: "ความเสียหายต่อทรัพย์สินบริษัท", type: "textarea", placeholder: "เช่น เสาไฟส่องสว่างของห้างเสียหาย" },
         yesnoField("hasInjury", "มีผู้บาดเจ็บหรือไม่"),
         yesnoField("hasCCTV", "มี CCTV หรือไม่"),
-        yesnoField("hasDashcam", "มีกล้องหน้ารถหรือไม่"),
         yesnoField("hasWitness", "มีพยานหรือไม่"),
         yesnoField("reportedPolice", "แจ้งตำรวจหรือไม่"),
-        { key: "policeStation", label: "สถานีตำรวจ", type: "text", row: "v3" },
-        { key: "policeRecordNo", label: "เลขบันทึกประจำวัน", type: "text", row: "v3" },
+        { key: "policeMoreInfo", label: "ข้อมูลเพิ่มเติมกรณีแจ้งตำรวจ", type: "textarea", showIf: { field: "reportedPolice", equals: "yes" } },
         { key: "insuranceCo", label: "บริษัทประกัน", type: "text" },
         { key: "agreement", label: "การตกลงของคู่กรณี", type: "textarea", placeholder: "เช่น คู่กรณีตกลงชดใช้ค่าเสียหายกันเอง" },
-        { key: "lpAction", label: "การดำเนินการของฝ่ายป้องกันฯ", type: "textarea", placeholder: "เช่น บันทึกภาพเหตุการณ์และประสานบริษัทประกันภัย" }
+        { key: "lpAction", label: "การดำเนินการของฝ่ายป้องกันฯ", type: "textarea", placeholder: "เช่น บันทึกภาพเหตุการณ์และประสานบริษัทประกันภัย" },
+        moreInfoField()
       ]
     },
 
@@ -616,11 +681,18 @@ body.has-actions{padding-bottom:90px;}
       id: "fight", label: "ทะเลาะวิวาท", icon: "😠", color: "red",
       extra: [
         { key: "parties", label: "ผู้เกี่ยวข้อง / คู่กรณี", type: "textarea", placeholder: "เช่น พนักงาน 2 คนทะเลาะกันเรื่องแบ่งงาน", help: "ระบุตัวบุคคลที่เกี่ยวข้องและความสัมพันธ์ระหว่างคู่กรณีโดยย่อ" },
+        personTypeField(),
         { key: "cause", label: "สาเหตุเบื้องต้น", type: "text" },
         yesnoField("hasInjury", "มีผู้ได้รับบาดเจ็บหรือไม่"),
         yesnoField("hasCCTV", "มี CCTV หรือไม่"),
         yesnoField("reportedPolice", "แจ้งตำรวจหรือไม่"),
-        { key: "controlAction", label: "การระงับเหตุ / การดำเนินการ", type: "textarea", placeholder: "เช่น เข้าห้ามปรามและแยกคู่กรณีออกจากกัน", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" }
+        { key: "controlAction", label: "การระงับเหตุ / การดำเนินการ", type: "textarea", placeholder: "เช่น เข้าห้ามปรามและแยกคู่กรณีออกจากกัน", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" },
+        {
+          key: "discipline", label: "บทลงโทษ / การดำเนินการทางวินัย", type: "select",
+          options: DISCIPLINE_OPTIONS, showIf: { field: "personType", equals: "staff" }
+        },
+        { key: "disciplineOther", label: "ระบุบทลงโทษ", type: "text", showIf: { field: "discipline", equals: "other" } },
+        moreInfoField()
       ]
     },
 
@@ -630,7 +702,8 @@ body.has-actions{padding-bottom:90px;}
       icon: "🚨",
       color: "red",
       extra: [
-        personTypeField(),
+        personTypeField()
+      ].concat(personDetailFields()).concat([
         { key: "suspectName", label: "ชื่อผู้ก่อเหตุ (ถ้าทราบ)", type: "text", row: "t1" },
         { key: "approxAge", label: "อายุโดยประมาณ", type: "number", unit: "ปี", row: "t1" },
         { key: "itemList", label: "รายการสินค้า", type: "textarea", placeholder: "เช่น เสื้อผ้า 2 ชิ้น มูลค่ารวมประมาณ 500 บาท" },
@@ -646,10 +719,13 @@ body.has-actions{padding-bottom:90px;}
           options: [{ value: "admit", label: "ยอมรับ" }, { value: "deny", label: "ปฏิเสธ" }]
         },
         yesnoField("paid", "ชำระค่าสินค้าหรือไม่"),
+        { key: "areaLPName", label: "Area LP (ชื่อ-สกุล)", type: "text", placeholder: "เช่น คุณสมชาย ใจดี", help: "ตำแหน่ง \"Area LP\" ล็อกไว้แล้ว กรอกเฉพาะชื่อ-สกุลผู้ประสาน" },
         yesnoField("reportedPolice", "แจ้งตำรวจหรือไม่"),
-        { key: "policeStation", label: "สถานีตำรวจ", type: "text", row: "t3" },
-        { key: "policeRecordNo", label: "เลขบันทึกประจำวัน", type: "text", row: "t3" }
-      ]
+        { key: "exhibitNo", label: "เลขที่ของกลาง", type: "text", row: "t3", showIf: { field: "reportedPolice", equals: "yes" } },
+        { key: "dutyOfficer", label: "ร้อยเวรเจ้าของคดี", type: "text", row: "t3", showIf: { field: "reportedPolice", equals: "yes" } },
+        { key: "caseMoreInfo", label: "ข้อมูลเพิ่มเติมเกี่ยวกับคดี", type: "textarea", showIf: { field: "reportedPolice", equals: "yes" } },
+        moreInfoField()
+      ])
     },
 
     {
@@ -663,15 +739,22 @@ body.has-actions{padding-bottom:90px;}
         yesnoField("hasFlame", "มีเปลวไฟหรือไม่"),
         yesnoField("hasSmoke", "มีกลุ่มควันหรือไม่"),
         yesnoField("powerCut", "มีการตัดกระแสไฟหรือไม่"),
-        { key: "extinguisherUsed", label: "อุปกรณ์ดับเพลิงที่ใช้", type: "text", row: "f1" },
+        {
+          key: "extinguisherUsed", label: "อุปกรณ์ดับเพลิงที่ใช้", type: "select", row: "f1",
+          options: FIRE_EXTINGUISHER_OPTIONS
+        },
+        { key: "extinguisherOther", label: "ระบุอุปกรณ์ดับเพลิง", type: "text", showIf: { field: "extinguisherUsed", equals: "other" } },
         { key: "extinguisherCount", label: "จำนวนถังดับเพลิงที่ใช้", type: "number", unit: "ถัง", row: "f1" },
         yesnoField("evacuated", "มีการอพยพหรือไม่"),
         yesnoField("hasInjury", "มีผู้ได้รับบาดเจ็บหรือไม่"),
+        { key: "injuryDetail", label: "รายละเอียดผู้ได้รับบาดเจ็บ", type: "textarea", showIf: { field: "hasInjury", equals: "yes" } },
         yesnoField("hasDamage", "มีทรัพย์สินเสียหายหรือไม่"),
+        { key: "damageDetail", label: "รายละเอียดทรัพย์สินเสียหาย", type: "textarea", showIf: { field: "hasDamage", equals: "yes" } },
         { key: "cause", label: "สาเหตุเบื้องต้น", type: "text" },
         { key: "inspectUnit", label: "หน่วยงานที่เข้าตรวจสอบ", type: "text" },
         { key: "fixApproach", label: "การแก้ไข", type: "textarea", placeholder: "เช่น ดับไฟด้วยถังดับเพลิงและตัดกระแสไฟฟ้าจุดเกิดเหตุ" },
-        { key: "preventApproach", label: "แนวทางป้องกันซ้ำ", type: "textarea", placeholder: "เช่น ตรวจสอบระบบไฟฟ้าเป็นประจำและติดตั้งอุปกรณ์ป้องกัน" }
+        { key: "preventApproach", label: "แนวทางป้องกันซ้ำ", type: "textarea", placeholder: "เช่น ตรวจสอบระบบไฟฟ้าเป็นประจำและติดตั้งอุปกรณ์ป้องกัน" },
+        moreInfoField()
       ]
     },
 
@@ -681,15 +764,24 @@ body.has-actions{padding-bottom:90px;}
         { key: "asset", label: "ทรัพย์สินที่เสียหาย", type: "text" },
         { key: "damage", label: "ลักษณะความเสียหาย", type: "textarea", placeholder: "เช่น กระจกประตูทางเข้าแตกร้าว", help: "อธิบายลักษณะและขอบเขตความเสียหายที่พบโดยย่อ" },
         { key: "cause", label: "สาเหตุเบื้องต้น", type: "text" },
-        { key: "action", label: "การแก้ไข / การดำเนินการ", type: "textarea", placeholder: "เช่น กั้นพื้นที่และประสานช่างเข้าซ่อมแซม", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" }
+        { key: "action", label: "การแก้ไข / การดำเนินการ", type: "textarea", placeholder: "เช่น กั้นพื้นที่และประสานช่างเข้าซ่อมแซม", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" },
+        moreInfoField()
       ]
     },
     {
       id: "customer", label: "เหตุเกี่ยวกับลูกค้า", icon: "🧑‍🤝‍🧑", color: "orange",
       extra: [
-        { key: "customerName", label: "ชื่อลูกค้า (ถ้าทราบ)", type: "text" },
-        { key: "issue", label: "เหตุการณ์ / ปัญหาที่เกิดขึ้น", type: "textarea", placeholder: "เช่น ลูกค้าลื่นล้มบริเวณทางเข้าห้าง", help: "อธิบายสิ่งที่พบและลำดับเหตุการณ์โดยย่อ" },
-        { key: "action", label: "การช่วยเหลือ / การดำเนินการ", type: "textarea", placeholder: "เช่น ปฐมพยาบาลเบื้องต้นและแจ้งหัวหน้างานรับทราบ", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" }
+        { key: "customerName", label: "ชื่อลูกค้า (ถ้าทราบ)", type: "text", row: "cu1" },
+        { key: "customerPhone", label: "เบอร์โทรลูกค้า (ถ้าทราบ)", type: "tel", row: "cu1" },
+        {
+          key: "issueType", label: "ประเภทเหตุการณ์", type: "select",
+          options: CUSTOMER_ISSUE_OPTIONS
+        },
+        { key: "issueTypeOther", label: "ระบุประเภทเหตุการณ์", type: "text", showIf: { field: "issueType", equals: "other" } },
+        { key: "issue", label: "รายละเอียดเหตุการณ์", type: "textarea", placeholder: "เช่น ลูกค้าลื่นล้มบริเวณทางเข้าห้าง", help: "อธิบายเหตุการณ์ที่เกิดขึ้น ลำดับเหตุ และสิ่งที่ตรวจสอบพบ" },
+        { key: "action", label: "การช่วยเหลือ / การดำเนินการ", type: "textarea", placeholder: "เช่น ปฐมพยาบาลเบื้องต้นและแจ้งหัวหน้างานรับทราบ" },
+        { key: "resultText", label: "ผลการดำเนินการ", type: "textarea", placeholder: "เช่น ลูกค้าพึงพอใจและไม่ติดใจเอาความ" },
+        moreInfoField()
       ]
     },
     {
@@ -698,7 +790,8 @@ body.has-actions{padding-bottom:90px;}
         { key: "staffName", label: "ชื่อพนักงาน", type: "text" },
         { key: "department", label: "แผนก / ฝ่าย", type: "text" },
         { key: "issue", label: "เหตุการณ์ที่เกิดขึ้น", type: "textarea", placeholder: "เช่น พนักงานมีอาการหน้ามืดและหายใจไม่สะดวกระหว่างปฏิบัติงาน", help: "อธิบายสิ่งที่พบและลำดับเหตุการณ์โดยย่อ" },
-        { key: "action", label: "การดำเนินการ", type: "textarea", placeholder: "เช่น ประสานร้านยาเพรียวเข้าตรวจอาการและให้พนักงานพักสังเกตอาการ", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" }
+        { key: "action", label: "การดำเนินการ", type: "textarea", placeholder: "เช่น ประสานร้านยาเพรียวเข้าตรวจอาการและให้พนักงานพักสังเกตอาการ", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" },
+        moreInfoField()
       ]
     },
     {
@@ -709,18 +802,32 @@ body.has-actions{padding-bottom:90px;}
         { key: "cause", label: "สาเหตุเบื้องต้น (ถ้าทราบ)", type: "text" },
         { key: "action", label: "การควบคุม / การแก้ไข", type: "textarea", placeholder: "เช่น ตัดกระแสไฟฟ้าจุดเกิดเหตุและประสานช่างไฟเข้าตรวจสอบ", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" },
         yesnoField("hasInjury", "มีผู้ได้รับบาดเจ็บหรือไม่"),
-        yesnoField("hasCustomerImpact", "มีผลกระทบต่อลูกค้าหรือไม่")
+        yesnoField("hasCustomerImpact", "มีผลกระทบต่อลูกค้าหรือไม่"),
+        { key: "customerImpactDetail", label: "รายละเอียดผลกระทบกับลูกค้า", type: "textarea", showIf: { field: "hasCustomerImpact", equals: "yes" } },
+        yesnoField("hasBranchImpact", "มีผลกระทบกับสาขาหรือไม่"),
+        { key: "branchImpactDetail", label: "รายละเอียดผลกระทบกับสาขา", type: "textarea", showIf: { field: "hasBranchImpact", equals: "yes" }, placeholder: "เช่น ปิดพื้นที่ หยุดจำหน่าย อุปกรณ์ใช้งานไม่ได้ ระบบไฟดับ หรือหยุดให้บริการชั่วคราว" },
+        moreInfoField()
       ]
     },
     {
-      id: "dropped", label: "สินค้าหรือทรัพย์สินตกหล่น", icon: "📉", color: "orange",
+      id: "dropped", label: "สินค้า / ทรัพย์สินเสียหายหรือร่วงหล่น", icon: "📉", color: "orange",
       extra: [
-        { key: "item", label: "สินค้า / ทรัพย์สิน", type: "text" },
-        { key: "quantity", label: "จำนวน", type: "text" },
-        { key: "damage", label: "ความเสียหาย", type: "textarea", placeholder: "เช่น กล่องสินค้าตกจากชั้นวางและแตกเสียหาย" },
+        { key: "perpetrator", label: "ผู้กระทำ / ผู้เกี่ยวข้อง (ถ้ามี)", type: "text" },
+        personTypeField()
+      ].concat(personDetailFields()).concat([
+        {
+          key: "productGroup", label: "กลุ่มสินค้า", type: "select",
+          options: PRODUCT_GROUP_OPTIONS
+        },
+        { key: "productGroupOther", label: "ระบุกลุ่มสินค้า", type: "text", showIf: { field: "productGroup", equals: "other" } },
+        { key: "item", label: "รายการสินค้า / ทรัพย์สิน", type: "text" },
+        { key: "quantity", label: "จำนวน", type: "text", row: "dr1" },
+        { key: "damageValue", label: "มูลค่าความเสียหาย", type: "number", unit: "บาท", row: "dr1" },
+        { key: "damage", label: "ลักษณะความเสียหาย", type: "textarea", placeholder: "เช่น กล่องสินค้าตกจากชั้นวางและแตกเสียหาย" },
         { key: "cause", label: "สาเหตุเบื้องต้น", type: "text" },
-        { key: "action", label: "การดำเนินการ", type: "textarea", placeholder: "เช่น เก็บกวาดพื้นที่และแจ้งแผนกที่เกี่ยวข้องดำเนินการต่อ", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" }
-      ]
+        { key: "action", label: "การดำเนินการ", type: "textarea", placeholder: "เช่น เก็บกวาดพื้นที่และแจ้งแผนกที่เกี่ยวข้องดำเนินการต่อ", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" },
+        moreInfoField()
+      ])
     },
     {
       id: "suspicious", label: "บุคคลต้องสงสัย", icon: "🕵️", color: "orange",
@@ -728,7 +835,8 @@ body.has-actions{padding-bottom:90px;}
         { key: "description", label: "ลักษณะบุคคล", type: "textarea", placeholder: "เช่น ชายไทย สูงประมาณ 170 ซม. สวมเสื้อดำ กางเกงยีนส์" },
         { key: "behavior", label: "พฤติกรรมที่พบ", type: "textarea", placeholder: "เช่น เดินวนไปมาบริเวณชั้นวางสินค้ามูลค่าสูง" },
         yesnoField("hasCCTV", "มี CCTV หรือไม่"),
-        { key: "action", label: "การติดตาม / การดำเนินการ", type: "textarea", placeholder: "เช่น ติดตามสังเกตการณ์และแจ้งเจ้าหน้าที่รักษาความปลอดภัย", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" }
+        { key: "action", label: "การติดตาม / การดำเนินการ", type: "textarea", placeholder: "เช่น ติดตามสังเกตการณ์และแจ้งเจ้าหน้าที่รักษาความปลอดภัย", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" },
+        moreInfoField()
       ]
     },
     {
@@ -738,7 +846,8 @@ body.has-actions{padding-bottom:90px;}
         { key: "foundBy", label: "ผู้พบ", type: "text" },
         { key: "storage", label: "จุดเก็บรักษา / ผู้รับมอบ", type: "text" },
         { key: "owner", label: "เจ้าของทรัพย์สิน (ถ้าทราบ)", type: "text" },
-        { key: "action", label: "การดำเนินการ", type: "textarea", placeholder: "เช่น เก็บรักษาไว้ที่จุดประชาสัมพันธ์รอเจ้าของมาติดต่อ" }
+        { key: "action", label: "การดำเนินการ", type: "textarea", placeholder: "เช่น เก็บรักษาไว้ที่จุดประชาสัมพันธ์รอเจ้าของมาติดต่อ" },
+        moreInfoField()
       ]
     },
     {
@@ -746,7 +855,8 @@ body.has-actions{padding-bottom:90px;}
       extra: [
         { key: "eventName", label: "ชื่อเหตุการณ์", type: "text" },
         { key: "finding", label: "สิ่งที่ตรวจพบ", type: "textarea", placeholder: "เช่น พบวัตถุต้องสงสัยบริเวณลานจอดรถ", help: "อธิบายสิ่งที่พบและลำดับเหตุการณ์โดยย่อ" },
-        { key: "action", label: "การดำเนินการ", type: "textarea", placeholder: "เช่น ตรวจสอบพื้นที่และแจ้งผู้เกี่ยวข้องรับทราบ", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" }
+        { key: "action", label: "การดำเนินการ", type: "textarea", placeholder: "เช่น ตรวจสอบพื้นที่และแจ้งผู้เกี่ยวข้องรับทราบ", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" },
+        moreInfoField()
       ]
     }
   ];
@@ -762,6 +872,12 @@ body.has-actions{padding-bottom:90px;}
     PERSON_TYPE_OPTIONS: PERSON_TYPE_OPTIONS,
     YESNO_OPTIONS: YESNO_OPTIONS,
     GENDER_OPTIONS: GENDER_OPTIONS,
+    RECIPIENT_POSITION_OPTIONS: RECIPIENT_POSITION_OPTIONS,
+    PARKING_ZONE_OPTIONS: PARKING_ZONE_OPTIONS,
+    FIRE_EXTINGUISHER_OPTIONS: FIRE_EXTINGUISHER_OPTIONS,
+    PRODUCT_GROUP_OPTIONS: PRODUCT_GROUP_OPTIONS,
+    CUSTOMER_ISSUE_OPTIONS: CUSTOMER_ISSUE_OPTIONS,
+    DISCIPLINE_OPTIONS: DISCIPLINE_OPTIONS,
     getType: getType
   };
 })(window);
@@ -829,6 +945,14 @@ body.has-actions{padding-bottom:90px;}
     if (record.typeId === "fall") {
       record.typeId = "accident";
       if (!record.extra.accidentType) record.extra.accidentType = "fall";
+    }
+    /* record เก่าที่ยังไม่มี core.recipients (ระบบผู้รับทราบหลายคน) แต่มี core.dutyName เดิม
+       -> แปลงเป็น recipient 1 รายการใน memory เท่านั้น (ไม่ลบ/เขียนทับ dutyName เดิมใน localStorage) */
+    if (!Array.isArray(record.core.recipients) && record.core.dutyName) {
+      var legacyPos = [record.core.dutyPosition, record.core.dutyShift].filter(function (v) {
+        return v !== undefined && v !== null && String(v).trim() !== "";
+      }).join(" ");
+      record.core.recipients = [{ name: record.core.dutyName, position: "other", positionOther: legacyPos }];
     }
     return record;
   }
@@ -980,6 +1104,51 @@ body.has-actions{padding-bottom:90px;}
   var IT = null; // lazy bind to window.IncidentTypes เพื่อดึง option label
   function opts() { return IT || (IT = global.IncidentTypes); }
 
+  /* แผนก/ฝ่าย (พนักงาน) หรือ ชื่อร้านค้า (ร้านค้าเช่า) ของ personType — ใช้ร่วมหลายประเภทเหตุการณ์ */
+  function personDetailClause(e) {
+    if (e.personType === "staff") {
+      return joinClauses([has(e.department) ? "แผนก " + e.department : "", has(e.division) ? "ฝ่าย " + e.division : ""]);
+    }
+    if (e.personType === "tenant") {
+      return has(e.shopName) ? "ร้านค้า " + e.shopName : "";
+    }
+    return "";
+  }
+
+  /* ตำแหน่งของผู้รับทราบเหตุการณ์ 1 คน (รองรับ position="other" -> ใช้ positionOther) */
+  function recipientPositionLabel(r) {
+    if (!r) return "";
+    if (r.position === "other") return has(r.positionOther) ? r.positionOther : "";
+    return optLabel(opts().RECIPIENT_POSITION_OPTIONS, r.position);
+  }
+
+  function recipientPhrase(r) {
+    var posLabel = recipientPositionLabel(r);
+    var name = has(r.name) ? r.name : "";
+    if (has(name) && has(posLabel)) return name + " (" + posLabel + ")";
+    if (has(name)) return name;
+    if (has(posLabel)) return posLabel;
+    return "";
+  }
+
+  /* เรียงรายชื่อแบบไทย "A, B และ C" */
+  function thaiListJoin(arr) {
+    var list = (arr || []).filter(has);
+    if (!list.length) return "";
+    if (list.length === 1) return list[0];
+    if (list.length === 2) return list[0] + " และ " + list[1];
+    return list.slice(0, -1).join(", ") + " และ " + list[list.length - 1];
+  }
+
+  /* clause รวมผู้รับทราบเหตุการณ์ทั้งหมด — รองรับ record เก่าที่ยังไม่มี core.recipients
+     (Storage.migrateRecord แปลง core.dutyName/dutyPosition/dutyShift เป็น recipient ใน memory ให้อัตโนมัติ
+     แต่กันไว้อีกชั้นในกรณีเรียก generate() ตรง ๆ กับ record ดิบที่ยังไม่ผ่าน migrate) */
+  function recipientsClause(c) {
+    var list = (c.recipients || []).map(recipientPhrase).filter(has);
+    if (list.length) return thaiListJoin(list);
+    return joinClauses([c.dutyName, c.dutyPosition, c.dutyShift]);
+  }
+
   /* ---------------- ข้อมูลย่อยรายประเภท: desc / findings / actions / cause / impact ---------------- */
   var BUILDERS = {
 
@@ -995,10 +1164,11 @@ body.has-actions{padding-bottom:90px;}
 
       var findings = joinClauses([
         has(e.victimName) ? "ผู้ประสบเหตุชื่อ" + e.victimName + (personLabel ? " เป็น" + personLabel : "") : (personLabel ? "ผู้ประสบเหตุเป็น" + personLabel : ""),
+        personDetailClause(e),
         has(atLabel) ? "ลักษณะอุบัติเหตุคือ" + atLabel : "",
         has(e.areaCondition) ? "สภาพพื้นที่เกิดเหตุ" + e.areaCondition : "",
         yn(e.hasCCTV, "จุดเกิดเหตุมีกล้องวงจรปิดบันทึกภาพไว้", "จุดเกิดเหตุไม่มีกล้องวงจรปิด"),
-        yn(e.hasWitness, "มีพยานเห็นเหตุการณ์", "ไม่มีพยานเห็นเหตุการณ์")
+        yn(e.areaDamage, has(e.areaDamageDetail) ? "พื้นที่/ทรัพย์สินบริเวณเกิดเหตุมีความเสียหาย " + e.areaDamageDetail : "พื้นที่/ทรัพย์สินบริเวณเกิดเหตุมีความเสียหาย", "พื้นที่/ทรัพย์สินบริเวณเกิดเหตุไม่มีความเสียหาย")
       ]);
       var actions = joinClauses([
         has(e.firstAid) ? "ให้การช่วยเหลือเบื้องต้นโดย" + e.firstAid : "",
@@ -1020,65 +1190,48 @@ body.has-actions{padding-bottom:90px;}
       c = c || {};
       var isStaff = e.personType === "staff";
       var personLabel = optLabel(opts().PERSON_TYPE_OPTIONS, e.personType);
+      var genderLabel = optLabel(opts().GENDER_OPTIONS, e.gender);
 
-      /* ชื่อประเภทบุคคล+แผนก ใช้ทั้งในหัวข้อและย่อหน้าเปิด เช่น "พนักงานแผนก FF" */
       var hasDept = isStaff && has(e.department);
       var personPhrase = has(personLabel) ? personLabel + (hasDept ? "แผนก " + e.department : "") : "";
-      var combinedSymptoms = has(e.symptoms) && has(e.symptomsExtra) ? e.symptoms + "และ" + e.symptomsExtra : (e.symptoms || e.symptomsExtra || "");
       var symptomLead = hasDept ? " มีอาการ" : "มีอาการ"; // เว้นวรรคก่อน "มีอาการ" เฉพาะเมื่อจบวลีด้วยชื่อแผนกภาษาอังกฤษ
 
-      var desc = has(personPhrase) && has(combinedSymptoms) ? personPhrase + symptomLead + combinedSymptoms
-        : (has(personPhrase) ? personPhrase : (has(combinedSymptoms) ? "พบผู้ป่วยมีอาการ" + combinedSymptoms : "พบผู้ป่วย/เจ็บป่วย"));
+      var desc = has(personPhrase) && has(e.symptoms) ? personPhrase + symptomLead + e.symptoms
+        : (has(personPhrase) ? personPhrase : (has(e.symptoms) ? "พบผู้ป่วยมีอาการ" + e.symptoms : "พบผู้ป่วย/เจ็บป่วย"));
       var openingDesc = has(personPhrase) ? "มี" + desc : desc;
 
-      /* ย่อหน้าตรวจสอบ: พบ[บุคคล]ทราบชื่อ... มีอาการ... จึงได้ประสาน...ตรวจ จากการตรวจพบว่า... */
-      var consLabel = optLabel([{ value: "alert", label: "รู้สึกตัวดี" }, { value: "drowsy", label: "ซึมลง" }, { value: "unconscious", label: "ไม่รู้สึกตัว" }], e.consciousness);
+      /* ย่อหน้าตรวจสอบ: พบ[บุคคล]ทราบชื่อ... มีอาการ... จึงได้ประสาน...ตรวจ */
+      var consLabel = optLabel([
+        { value: "alert", label: "รู้สึกตัวดี" }, { value: "better", label: "อาการดีขึ้น" },
+        { value: "worse", label: "อาการไม่ดีขึ้น" }, { value: "unconscious", label: "ไม่รู้สึกตัว" }
+      ], e.consciousness);
       var personClause = has(personLabel) ? personLabel + (has(e.patientName) ? "ทราบชื่อ " + e.patientName : "") : (has(e.patientName) ? "ทราบชื่อ " + e.patientName : "");
       var findings = joinClauses([
         personClause,
+        has(genderLabel) ? "เพศ" + genderLabel : "",
         has(e.approxAge) ? "อายุ " + e.approxAge + " ปี" : "",
-        isStaff && has(e.workDuration) ? "อายุงาน " + e.workDuration : "",
         isStaff && has(e.department) ? "ปฏิบัติงานแผนก " + e.department : "",
         isStaff && has(e.division) ? "ฝ่าย " + e.division : "",
-        has(combinedSymptoms) ? "มีอาการ" + combinedSymptoms : "",
-        has(consLabel) ? "ระดับการรู้สึกตัว" + consLabel : "",
-        yn(e.canTalk, "สามารถพูดคุยโต้ตอบได้", "ไม่สามารถพูดคุยโต้ตอบได้")
+        !isStaff && e.personType === "tenant" ? personDetailClause(e) : "",
+        has(e.symptoms) ? "มีอาการ" + e.symptoms : "",
+        has(consLabel) ? "ระดับอาการ" + consLabel : ""
       ]);
 
-      var vitals = joinClauses([
-        has(e.bloodPressure) ? "ความดันโลหิต " + e.bloodPressure : "",
-        has(e.heartRate) ? "อัตราการเต้นของหัวใจ " + e.heartRate : ""
-      ]);
-      var checkClause = joinClauses([e.checkResult, vitals]);
       var actions = joinClauses([
         has(e.checkedBy) ? "จึงได้ประสาน" + e.checkedBy + "เข้ามาตรวจอาการเบื้องต้น" : "",
-        has(checkClause) ? "จากการตรวจพบว่า" + checkClause : ""
+        has(e.firstAid) ? "จากการตรวจพบว่า" + e.firstAid : ""
       ]);
 
-      /* ย่อหน้าประวัติก่อนเกิดอาการ */
-      var priorClauses = joinClauses([
-        has(e.shiftStartTime) ? "ก่อนเข้าปฏิบัติงานช่วงเวลาประมาณ " + e.shiftStartTime + " น." : "",
-        has(e.priorEvent) ? (isStaff ? "พนักงานได้" : "ผู้ป่วยได้") + e.priorEvent : "",
-        has(e.symptomStartTime) ? "เริ่มมีอาการดังกล่าวเมื่อเวลาประมาณ " + e.symptomStartTime + " น." : ""
-      ]);
-      var priorParagraph = has(priorClauses) ? ("จากการสอบถาม" + (isStaff ? "พนักงาน" : "ผู้ป่วย") + "เบื้องต้น ทราบว่า" + priorClauses) : "";
-
-      /* ย่อหน้าการปฐมพยาบาล + ญาติ/โรงพยาบาล */
-      var firstAidClauses = joinClauses([
-        has(e.firstAid) ? "ได้ทำการปฐมพยาบาล" + (has(e.checkedBy) ? "โดย" + e.checkedBy : "") : "",
-        has(e.advice) ? "และแนะนำให้" + e.advice : "",
-        has(e.checkResult) ? "เนื่องจาก" + e.checkResult : ""
-      ]);
+      /* ย่อหน้าผลหลังช่วยเหลือ: ส่งโรงพยาบาล / ญาติมารับ / ผลหลังช่วยเหลือ */
       var followUpClauses = joinClauses([
         yn(e.sentHospital, has(e.hospital) ? "ทางสาขาได้นำส่ง" + withPrefix(e.hospital, "โรงพยาบาล") : "ทางสาขาได้นำส่งโรงพยาบาล", ""),
-        yn(e.relativeReceived, "ทางสาขาได้ประสานญาติของ" + (isStaff ? "พนักงาน" : "ผู้ป่วย") + "ให้เข้ามารับทราบอาการ" + (has(e.relativeReceivedTime) ? " และรับตัวกลับบ้านในเวลาประมาณ " + e.relativeReceivedTime + " น." : ""), "")
+        yn(e.relativeReceived, "ทางสาขาได้ประสานญาติของ" + (isStaff ? "พนักงาน" : "ผู้ป่วย") + "ให้เข้ามารับทราบอาการ", ""),
+        has(e.resultAfterHelp) ? "ผลหลังการช่วยเหลือ " + e.resultAfterHelp : ""
       ]);
-      var firstAidParagraph = has(firstAidClauses) ? ("เบื้องต้น " + firstAidClauses + (has(followUpClauses) ? " " + followUpClauses : "")) : followUpClauses;
 
-      /* ย่อหน้าปิด: แจ้ง Duty */
-      var dutyClause = joinClauses([c.dutyName, c.dutyPosition, c.dutyShift]);
-      var closingText = has(dutyClause)
-        ? ("จากเหตุการณ์ดังกล่าว ทางฝ่ายป้องกันฯ ได้แจ้ง" + dutyClause + " รับทราบเหตุการณ์ที่เกิดขึ้น" +
+      var recClause = recipientsClause(c);
+      var closingText = has(recClause)
+        ? ("จากเหตุการณ์ดังกล่าว ทางฝ่ายป้องกันฯ ได้แจ้ง" + recClause + " รับทราบเหตุการณ์ที่เกิดขึ้น" +
           (has(c.escalateTo) ? " พร้อมประสานแจ้ง " + c.escalateTo : "") +
           " และจัดทำรายงานเหตุ 24 ชม. ต่อไปครับ รายละเอียดจะแจ้งให้ทราบต่อไปครับ")
         : "";
@@ -1087,44 +1240,48 @@ body.has-actions{padding-bottom:90px;}
         desc: desc, openingDesc: openingDesc, suppressLocation: true,
         investigationIntro: "ทางฝ่ายป้องกันฯ จึงได้รุดไปตรวจสอบที่เกิดเหตุทันที พบ",
         findings: findings, actions: actions, actionsStandalone: true,
-        customParagraphs: [priorParagraph, firstAidParagraph],
+        customParagraphs: [followUpClauses],
         closingText: closingText,
         cause: null, causeApplicable: false
       };
     },
 
     vehicle: function (e) {
+      var zoneLabel = e.parkingZone === "other" ? e.parkingZoneOther : optLabel(opts().PARKING_ZONE_OPTIONS, e.parkingZone);
       function veh(n) {
         var t = e["v" + n + "Type"], br = e["v" + n + "Brand"], c = e["v" + n + "Color"],
-          pl = e["v" + n + "Plate"], dr = e["v" + n + "Driver"], ph = e["v" + n + "Phone"];
+          pl = e["v" + n + "Plate"], dr = e["v" + n + "Driver"];
         var parts = [];
         if (has(t)) parts.push("เป็น" + t);
         if (has(br)) parts.push("ยี่ห้อ " + br);
         if (has(c)) parts.push("สี" + c);
         if (has(pl)) parts.push("ทะเบียน " + pl);
         if (has(dr)) parts.push("ผู้ขับขี่ชื่อ" + dr);
-        if (has(ph)) parts.push("เบอร์ติดต่อ " + ph);
         if (!parts.length) return "";
         return "รถคันที่ " + n + " " + parts.join(" ");
       }
+      function vehDamage(n) {
+        var zone = e["v" + n + "DamageZone"], detail = e["v" + n + "DamageDetail"], more = e["v" + n + "MoreInfo"];
+        var parts = [];
+        if (has(zone) || has(detail)) parts.push("ความเสียหายรถคันที่ " + n + (has(zone) ? " บริเวณ" + zone : "") + (has(detail) ? " " + detail : ""));
+        if (has(more)) parts.push(more);
+        return parts.join(" ");
+      }
       var findings = joinClauses([
+        has(zoneLabel) ? "จุดเกิดเหตุอยู่บริเวณ" + zoneLabel : "",
         veh(1), veh(2),
         has(e.crashType) ? "ลักษณะการชนคือ" + e.crashType : "",
         yn(e.hasCCTV, "จุดเกิดเหตุมีกล้องวงจรปิด", "จุดเกิดเหตุไม่มีกล้องวงจรปิด"),
-        yn(e.hasDashcam, "มีภาพจากกล้องหน้ารถ", "ไม่มีภาพจากกล้องหน้ารถ"),
         yn(e.hasWitness, "มีพยานเห็นเหตุการณ์", "ไม่มีพยานเห็นเหตุการณ์")
       ]);
       var actions = joinClauses([
-        yn(e.reportedPolice,
-          "แจ้งความต่อพนักงานสอบสวน" + (has(e.policeStation) ? "สถานีตำรวจ" + e.policeStation : "") + (has(e.policeRecordNo) ? " เลขบันทึกประจำวัน" + e.policeRecordNo : ""),
-          "ไม่ได้แจ้งความ"),
+        yn(e.reportedPolice, "แจ้งความต่อพนักงานสอบสวน" + (has(e.policeMoreInfo) ? " " + e.policeMoreInfo : ""), "ไม่ได้แจ้งความ"),
         has(e.insuranceCo) ? "ประสานงานกับบริษัทประกัน" + e.insuranceCo : "",
         has(e.lpAction) ? "ฝ่ายป้องกันฯ ดำเนินการเพิ่มเติมโดย" + e.lpAction : ""
       ]);
       var impact = joinClauses([
         yn(e.hasInjury, "มีผู้ได้รับบาดเจ็บ", "ไม่มีผู้ได้รับบาดเจ็บ"),
-        has(e.damage1) ? "ความเสียหายรถคันที่ 1 " + e.damage1 : "",
-        has(e.damage2) ? "ความเสียหายรถคันที่ 2 " + e.damage2 : "",
+        vehDamage(1), vehDamage(2),
         has(e.companyDamage) ? "มีความเสียหายต่อทรัพย์สินบริษัท " + e.companyDamage : "",
         has(e.agreement) ? "คู่กรณี" + e.agreement : ""
       ]);
@@ -1136,6 +1293,7 @@ body.has-actions{padding-bottom:90px;}
     },
 
     fire: function (e) {
+      var extLabel = e.extinguisherUsed === "other" ? e.extinguisherOther : optLabel(opts().FIRE_EXTINGUISHER_OPTIONS, e.extinguisherUsed);
       var findings = joinClauses([
         has(e.founder) ? "ผู้พบเหตุคือ" + e.founder : "",
         has(e.burningItem) ? "สิ่งที่เกิดการไหม้คือ" + e.burningItem : "",
@@ -1144,15 +1302,15 @@ body.has-actions{padding-bottom:90px;}
       ]);
       var actions = joinClauses([
         yn(e.powerCut, "ตัดกระแสไฟฟ้าบริเวณจุดเกิดเหตุ", "ไม่ได้ตัดกระแสไฟฟ้า"),
-        has(e.extinguisherUsed) ? "ใช้" + e.extinguisherUsed + "ในการระงับเหตุ" + (has(e.extinguisherCount) ? " จำนวน " + e.extinguisherCount + " ถัง" : "") : "",
+        has(extLabel) ? "ใช้" + extLabel + "ในการระงับเหตุ" + (has(e.extinguisherCount) ? " จำนวน " + e.extinguisherCount + " ถัง" : "") : "",
         yn(e.evacuated, "อพยพผู้ที่อยู่ในพื้นที่", "ไม่มีการอพยพ"),
         has(e.inspectUnit) ? "ประสาน" + e.inspectUnit + "เข้าตรวจสอบ" : "",
         has(e.fixApproach) ? "ดำเนินการแก้ไขโดย" + e.fixApproach : "",
         has(e.preventApproach) ? "กำหนดแนวทางป้องกันซ้ำโดย" + e.preventApproach : ""
       ]);
       var impact = joinClauses([
-        yn(e.hasInjury, "มีผู้ได้รับบาดเจ็บ", "ไม่มีผู้ได้รับบาดเจ็บ"),
-        yn(e.hasDamage, "มีทรัพย์สินเสียหาย", "ไม่มีทรัพย์สินเสียหาย")
+        yn(e.hasInjury, has(e.injuryDetail) ? "มีผู้ได้รับบาดเจ็บ " + e.injuryDetail : "มีผู้ได้รับบาดเจ็บ", "ไม่มีผู้ได้รับบาดเจ็บ"),
+        yn(e.hasDamage, has(e.damageDetail) ? "มีทรัพย์สินเสียหาย " + e.damageDetail : "มีทรัพย์สินเสียหาย", "ไม่มีทรัพย์สินเสียหาย")
       ]);
       return {
         desc: "พบเพลิงไหม้/กลุ่มควัน",
@@ -1162,6 +1320,7 @@ body.has-actions{padding-bottom:90px;}
     },
 
     fight: function (e) {
+      var disciplineLabel = e.discipline === "other" ? e.disciplineOther : optLabel(opts().DISCIPLINE_OPTIONS, e.discipline);
       var findings = joinClauses([
         has(e.parties) ? "ผู้เกี่ยวข้อง " + e.parties : "",
         has(e.cause) ? "สาเหตุเบื้องต้น " + e.cause : "",
@@ -1169,10 +1328,11 @@ body.has-actions{padding-bottom:90px;}
       ]);
       var actions = joinClauses([
         has(e.controlAction) ? e.controlAction : "",
-        yn(e.reportedPolice, "ได้ประสานเจ้าหน้าที่ตำรวจ", "ไม่ได้แจ้งตำรวจ")
+        yn(e.reportedPolice, "ได้ประสานเจ้าหน้าที่ตำรวจ", "ไม่ได้แจ้งตำรวจ"),
+        has(disciplineLabel) ? "ดำเนินการทางวินัย" + disciplineLabel : ""
       ]);
       var impact = yn(e.hasInjury, "มีผู้ได้รับบาดเจ็บ", "ไม่มีผู้ได้รับบาดเจ็บ");
-      return { desc:"เกิดเหตุทะเลาะวิวาท", findings:findings, actions:actions, impact:impact, cause:null, causeApplicable:false };
+      return { desc: "เกิดเหตุทะเลาะวิวาท", findings: findings, actions: actions, impact: impact, cause: null, causeApplicable: false };
     },
 
     property_damage: function (e) {
@@ -1190,15 +1350,19 @@ body.has-actions{padding-bottom:90px;}
     },
 
     customer: function (e) {
+      var issueLabel = e.issueType === "other" ? e.issueTypeOther : optLabel(opts().CUSTOMER_ISSUE_OPTIONS, e.issueType);
       return {
-        desc: "เหตุเกี่ยวกับลูกค้า",
+        desc: has(issueLabel) ? "เหตุเกี่ยวกับลูกค้า ประเภท" + issueLabel : "เหตุเกี่ยวกับลูกค้า",
         findings: joinClauses([
-          has(e.customerName) ? "ลูกค้าชื่อ" + e.customerName : "",
+          has(e.customerName) ? "ลูกค้าชื่อ" + e.customerName + (has(e.customerPhone) ? " เบอร์ติดต่อ " + e.customerPhone : "") : "",
           has(e.issue) ? e.issue : ""
         ]),
-        actions: has(e.action) ? e.action : "",
+        actions: joinClauses([
+          has(e.action) ? e.action : "",
+          has(e.resultText) ? "ผลการดำเนินการ " + e.resultText : ""
+        ]),
         impact: "",
-        cause:null, causeApplicable:false
+        cause: null, causeApplicable: false
       };
     },
 
@@ -1212,7 +1376,7 @@ body.has-actions{padding-bottom:90px;}
         ]),
         actions: has(e.action) ? e.action : "",
         impact: "",
-        cause:null, causeApplicable:false
+        cause: null, causeApplicable: false
       };
     },
 
@@ -1226,23 +1390,31 @@ body.has-actions{padding-bottom:90px;}
         actions: has(e.action) ? e.action : "",
         impact: joinClauses([
           yn(e.hasInjury, "มีผู้ได้รับบาดเจ็บ", "ไม่มีผู้ได้รับบาดเจ็บ"),
-          yn(e.hasCustomerImpact, "มีผลกระทบต่อลูกค้าที่มาใช้บริการ", "ไม่มีผลกระทบต่อลูกค้าที่มาใช้บริการ")
+          yn(e.hasCustomerImpact, has(e.customerImpactDetail) ? "มีผลกระทบต่อลูกค้าที่มาใช้บริการ " + e.customerImpactDetail : "มีผลกระทบต่อลูกค้าที่มาใช้บริการ", "ไม่มีผลกระทบต่อลูกค้าที่มาใช้บริการ"),
+          yn(e.hasBranchImpact, has(e.branchImpactDetail) ? "มีผลกระทบกับสาขา " + e.branchImpactDetail : "มีผลกระทบกับสาขา", "ไม่มีผลกระทบกับสาขา")
         ]),
-        cause:e.cause, causeApplicable:true
+        cause: e.cause, causeApplicable: true
       };
     },
 
     dropped: function (e) {
+      var groupLabel = e.productGroup === "other" ? e.productGroupOther : optLabel(opts().PRODUCT_GROUP_OPTIONS, e.productGroup);
+      var personLabel = optLabel(opts().PERSON_TYPE_OPTIONS, e.personType);
       return {
-        desc: "สินค้าหรือทรัพย์สินตกหล่น",
+        desc: "สินค้า/ทรัพย์สินเสียหายหรือร่วงหล่น",
         findings: joinClauses([
+          has(e.perpetrator) ? "ผู้เกี่ยวข้องคือ" + e.perpetrator : "",
+          has(personLabel) ? "เป็น" + personLabel : "",
+          personDetailClause(e),
+          has(groupLabel) ? "กลุ่มสินค้า" + groupLabel : "",
           has(e.item) ? "รายการที่เกี่ยวข้องคือ" + e.item : "",
           has(e.quantity) ? "จำนวน " + e.quantity : "",
+          has(e.damageValue) ? "มูลค่าความเสียหายประมาณ " + e.damageValue + " บาท" : "",
           has(e.damage) ? "พบความเสียหาย " + e.damage : ""
         ]),
         actions: has(e.action) ? e.action : "",
-        impact:"",
-        cause:e.cause, causeApplicable:true
+        impact: "",
+        cause: e.cause, causeApplicable: true
       };
     },
 
@@ -1255,8 +1427,8 @@ body.has-actions{padding-bottom:90px;}
           yn(e.hasCCTV, "มีกล้องวงจรปิดบันทึกภาพไว้", "ไม่มีกล้องวงจรปิด")
         ]),
         actions: has(e.action) ? e.action : "",
-        impact:"",
-        cause:null, causeApplicable:false
+        impact: "",
+        cause: null, causeApplicable: false
       };
     },
 
@@ -1272,8 +1444,8 @@ body.has-actions{padding-bottom:90px;}
           has(e.storage) ? "นำเก็บรักษาไว้ที่" + e.storage : "",
           has(e.action) ? e.action : ""
         ]),
-        impact:"",
-        cause:null, causeApplicable:false
+        impact: "",
+        cause: null, causeApplicable: false
       };
     },
 
@@ -1282,8 +1454,8 @@ body.has-actions{padding-bottom:90px;}
         desc: has(e.eventName) ? e.eventName : "เหตุการณ์อื่น ๆ",
         findings: has(e.finding) ? e.finding : "",
         actions: has(e.action) ? e.action : "",
-        impact:"",
-        cause:null, causeApplicable:false
+        impact: "",
+        cause: null, causeApplicable: false
       };
     },
 
@@ -1292,6 +1464,7 @@ body.has-actions{padding-bottom:90px;}
       var admitLabel = optLabel([{ value: "admit", label: "ยอมรับการกระทำ" }, { value: "deny", label: "ปฏิเสธการกระทำ" }], e.admitOrDeny);
       var findings = joinClauses([
         has(personLabel) ? "ผู้ก่อเหตุเป็น" + personLabel : "",
+        personDetailClause(e),
         has(e.suspectName) ? "ชื่อ " + e.suspectName : "",
         has(e.approxAge) ? "อายุประมาณ " + e.approxAge + " ปี" : "",
         has(e.itemList) ? "รายการสินค้าที่เกี่ยวข้องคือ" + e.itemList + (has(e.quantity) ? " จำนวน" + e.quantity : "") + (has(e.value) ? " มูลค่าประมาณ " + e.value + " บาท" : "") : "",
@@ -1304,8 +1477,9 @@ body.has-actions{padding-bottom:90px;}
       var actions = joinClauses([
         has(e.detainedPoint) ? "ควบคุมตัวไว้ที่" + e.detainedPoint : "",
         yn(e.paid, "ให้ชำระค่าสินค้าเรียบร้อยแล้ว", "ยังไม่ได้ชำระค่าสินค้า"),
+        has(e.areaLPName) ? "ประสาน Area LP " + withPrefix(e.areaLPName, "คุณ") : "",
         yn(e.reportedPolice,
-          "แจ้งความต่อพนักงานสอบสวน" + (has(e.policeStation) ? "สถานีตำรวจ" + e.policeStation : "") + (has(e.policeRecordNo) ? " เลขบันทึกประจำวัน" + e.policeRecordNo : ""),
+          "แจ้งความต่อพนักงานสอบสวน" + (has(e.exhibitNo) ? " เลขที่ของกลาง " + e.exhibitNo : "") + (has(e.dutyOfficer) ? " ร้อยเวรเจ้าของคดี" + e.dutyOfficer : "") + (has(e.caseMoreInfo) ? " " + e.caseMoreInfo : ""),
           "ไม่ได้แจ้งความ")
       ]);
       return {
@@ -1334,7 +1508,6 @@ body.has-actions{padding-bottom:90px;}
     var openingDesc = built.openingDesc || desc;
     var findings = joinClauses([built.findings, c.details]);
     var actions = built.actions || "";
-    var impact = joinClauses([built.impact, c.actionResult]);
     var locClause = (!built.suppressLocation && has(c.location)) ? withPrefix(c.location, "บริเวณ") : "";
 
     var lines = [];
@@ -1370,27 +1543,30 @@ body.has-actions{padding-bottom:90px;}
       lines.push("");
     }
 
-    /* 4. ย่อหน้าเสริมเฉพาะประเภท (เช่น ประวัติก่อนเกิดอาการ / การปฐมพยาบาล) แทนที่สาเหตุ+ผลกระทบมาตรฐาน */
+    /* 4. ย่อหน้าเสริมเฉพาะประเภท (เช่น ผลหลังช่วยเหลือของผู้ป่วย) แทนที่สาเหตุ+ผลกระทบมาตรฐาน */
     if (built.customParagraphs) {
       built.customParagraphs.forEach(function (p) {
         if (has(p)) { lines.push(p); lines.push(""); }
       });
+      /* ข้อมูลเพิ่มเติม (ถ้ามี) — ฟิลด์ moreInfo ใช้ร่วมกันทุกประเภท */
+      if (has(e.moreInfo)) { lines.push(e.moreInfo); lines.push(""); }
     } else {
       /* 4ก. สาเหตุเบื้องต้น (เฉพาะประเภทที่มีแนวคิดเรื่องสาเหตุ) */
       if (built.causeApplicable) {
         lines.push("เบื้องต้น " + (has(built.cause) ? "คาดว่า" + built.cause : "ยังไม่สามารถระบุสาเหตุที่แน่ชัดได้ และอยู่ระหว่างการตรวจสอบจากผู้เกี่ยวข้อง"));
         lines.push("");
       }
-      /* 4ข. ผลกระทบ / ผู้บาดเจ็บ / ความเสียหาย */
+      /* 4ข. ผลกระทบ / ผู้บาดเจ็บ / ความเสียหาย / ข้อมูลเพิ่มเติม */
+      var impact = joinClauses([built.impact, c.actionResult, e.moreInfo]);
       if (has(impact)) {
         lines.push("จากเหตุการณ์ดังกล่าว " + impact);
         lines.push("");
       }
     }
 
-    /* 5. แจ้ง Duty / ปิดท้าย */
-    var dutyClause = joinClauses([c.dutyName, c.dutyPosition, c.dutyShift]);
-    var genericClosing = "จากเหตุการณ์ที่เกิดขึ้น ได้แจ้ง" + (has(dutyClause) ? dutyClause + " " : "ผู้เกี่ยวข้อง") +
+    /* 5. แจ้งผู้รับทราบเหตุการณ์ / ปิดท้าย */
+    var recClause = recipientsClause(c);
+    var genericClosing = "จากเหตุการณ์ที่เกิดขึ้น ได้แจ้ง" + (has(recClause) ? recClause + " " : "ผู้เกี่ยวข้อง") +
       "รับทราบเหตุการณ์ที่เกิดขึ้น" + (has(c.escalateTo) ? " พร้อมประสานแจ้ง " + c.escalateTo : "") +
       " และจัดทำรายงานเหตุ 24 ชม. ต่อไปครับ รายละเอียดจะแจ้งทางเมลให้ทราบต่อไปครับ";
     lines.push(built.closingText || genericClosing);
@@ -1400,7 +1576,6 @@ body.has-actions{padding-bottom:90px;}
 
   global.ReportGenerator = { generate: generate, thaiDate: thaiDate };
 })(window);
-
 </script>
 <script>
 /* ===== screens (orchestration) ===== */
@@ -1492,7 +1667,7 @@ var HomeScreen = (function(){
 var ReportScreen = (function(){
   var record = null, reportEdited = false;
 
-  function blankRecord(tId){ return { typeId: tId, core: {}, extra: {} }; }
+  function blankRecord(tId){ return { typeId: tId, core: { recipients: [] }, extra: {} }; }
 
   function open(opts){
     opts = opts || {};
@@ -1642,6 +1817,72 @@ var ReportScreen = (function(){
   }
   function autosave(){ Storage.saveDraft(record); }
 
+  /* ผู้รับทราบเหตุการณ์ (core.recipients = [{name, position, positionOther}]) — UI เฉพาะ ไม่ใช่ field schema ธรรมดา */
+  function renderRecipients(){
+    record.core.recipients = record.core.recipients || [];
+    var box = $("recipientsList");
+    box.innerHTML = "";
+    if(!record.core.recipients.length){
+      box.innerHTML = "<div class='empty' style='padding:16px 0;'>ยังไม่มีผู้รับทราบเหตุการณ์</div>";
+    }
+    record.core.recipients.forEach(function(r, idx){
+      var row = document.createElement("div");
+      row.className = "recipientrow";
+      var posOpts = "<option value=''>— เลือกตำแหน่ง —</option>" + IncidentTypes.RECIPIENT_POSITION_OPTIONS.map(function(o){
+        return "<option value='"+o.value+"'"+(o.value===r.position?" selected":"")+">"+App.escapeHtml(o.label)+"</option>";
+      }).join("");
+      row.innerHTML =
+        "<button type='button' class='rmbtn' data-idx='"+idx+"'>×</button>"+
+        "<div class='row2'>"+
+          "<div class='f'><label>ชื่อ-สกุล</label><input type='text' class='rp-name' data-idx='"+idx+"' value=\""+App.escapeHtml(r.name||"")+"\" placeholder='เช่น คุณสมชาย ใจดี'></div>"+
+          "<div class='f'><label>ตำแหน่ง</label><select class='rp-position' data-idx='"+idx+"'>"+posOpts+"</select></div>"+
+        "</div>"+
+        (r.position === "other" ? "<div class='f'><label>ระบุตำแหน่ง</label><input type='text' class='rp-other' data-idx='"+idx+"' value=\""+App.escapeHtml(r.positionOther||"")+"\" placeholder='เช่น หัวหน้าแผนก Freshfood'></div>" : "");
+      box.appendChild(row);
+    });
+    box.querySelectorAll(".rmbtn").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        record.core.recipients.splice(parseInt(btn.dataset.idx,10), 1);
+        autosave();
+        renderRecipients();
+      });
+    });
+    box.querySelectorAll(".rp-name").forEach(function(el){
+      el.addEventListener("input", function(){
+        record.core.recipients[parseInt(el.dataset.idx,10)].name = el.value;
+        autosave();
+      });
+    });
+    box.querySelectorAll(".rp-position").forEach(function(el){
+      el.addEventListener("change", function(){
+        var idx = parseInt(el.dataset.idx,10);
+        record.core.recipients[idx].position = el.value;
+        if(el.value !== "other") record.core.recipients[idx].positionOther = "";
+        autosave();
+        renderRecipients();
+      });
+    });
+    box.querySelectorAll(".rp-other").forEach(function(el){
+      el.addEventListener("input", function(){
+        record.core.recipients[parseInt(el.dataset.idx,10)].positionOther = el.value;
+        autosave();
+      });
+    });
+  }
+  $("btnAddRecipient").addEventListener("click", function(){
+    record.core.recipients = record.core.recipients || [];
+    record.core.recipients.push({ name: "", position: "", positionOther: "" });
+    autosave();
+    renderRecipients();
+  });
+  $("btnClearRecipients").addEventListener("click", function(){
+    if(!confirm("ล้างข้อมูลผู้รับทราบเหตุการณ์ทั้งหมด?")) return;
+    record.core.recipients = [];
+    autosave();
+    renderRecipients();
+    App.toast("ล้างข้อมูลหมวดนี้แล้ว");
+  });
+
   function showForm(tId){
     /* กัน crash ถ้า typeId เก่า/ไม่รู้จักไม่มี typeDef (เช่นข้อมูลเก่าที่ยังไม่ได้ migrate) -> ใช้หน้าตาของ "อื่น ๆ" แทน
        โดยไม่เปลี่ยน record.typeId เดิม เพื่อไม่ให้ข้อมูล metadata หาย */
@@ -1659,6 +1900,7 @@ var ReportScreen = (function(){
     coreBox.innerHTML = "";
     renderRowGroup(IncidentTypes.CORE_FIELDS, "core", record.core, coreBox);
     bindFieldEvents(coreBox);
+    renderRecipients();
 
     var extraCard = $("extraCard"), extraBox = $("extraFields");
     if(typeDef.extra && typeDef.extra.length){
@@ -1681,7 +1923,8 @@ var ReportScreen = (function(){
 
   $("btnClearCore").addEventListener("click", function(){
     if(!confirm("ล้างข้อมูลในหมวด \"ข้อมูลพื้นฐาน\" ทั้งหมด?")) return;
-    record.core = {};
+    var keepRecipients = record.core.recipients;
+    record.core = { recipients: keepRecipients };
     autosave();
     showForm(record.typeId);
     App.toast("ล้างข้อมูลหมวดนี้แล้ว");
