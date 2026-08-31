@@ -1399,6 +1399,26 @@ function showScreen(name){
 $("navHome").addEventListener("click", function(e){ e.preventDefault(); showScreen("Home"); });
 $("navHistory").addEventListener("click", function(e){ e.preventDefault(); showScreen("History"); });
 
+/* ปัดนิ้วไปทางขวา (ที่ไหนก็ได้บนหน้าจอ ไม่ใช่แค่ขอบ กันชนกับท่าทาง back ของ Safari) = ย้อนกลับไปหน้าแรก */
+(function(){
+  var startX = 0, startY = 0, tracking = false;
+  var MIN_DX = 80, MAX_DY = 45;
+  document.addEventListener("touchstart", function(e){
+    if(e.touches.length !== 1) return;
+    tracking = true;
+    startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+  }, {passive:true});
+  document.addEventListener("touchend", function(e){
+    if(!tracking) return;
+    tracking = false;
+    var t = e.changedTouches[0];
+    var dx = t.clientX - startX, dy = Math.abs(t.clientY - startY);
+    if(dx > MIN_DX && dy < MAX_DY && $("screenHome").style.display === "none"){
+      showScreen("Home");
+    }
+  }, {passive:true});
+})();
+
 /* ================= HOME ================= */
 var HomeScreen = (function(){
   function render(){
