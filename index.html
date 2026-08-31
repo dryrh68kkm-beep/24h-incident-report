@@ -454,7 +454,10 @@ body.has-actions{padding-bottom:90px;}
     { key: "incidentTime", label: "เวลาที่เกิดเหตุ", type: "time", required: true, row: "r1" },
     { key: "location", label: "สถานที่เกิดเหตุ", type: "text", required: true },
     { key: "reporterName", label: "ผู้แจ้งเหตุ", type: "text" },
-    { key: "dutyName", label: "แจ้ง Duty / ผู้เกี่ยวข้องรับทราบ", type: "text", placeholder: "เช่น คุณสมชาย ใจดี C. Duty รอบเช้า", help: "ระบุชื่อ ตำแหน่ง และรอบเวร เช่น หัวหน้าแผนกใช้ \"C.\" ผู้จัดการใช้ \"M.\" พร้อมระบุรอบเช้าหรือบ่าย" }
+    { key: "dutyName", label: "ชื่อ Duty ที่รับทราบ", type: "text", row: "duty1", placeholder: "เช่น คุณสมชาย ใจดี" },
+    { key: "dutyPosition", label: "ตำแหน่ง Duty", type: "text", row: "duty1", placeholder: "เช่น C. (หัวหน้าแผนก) หรือ M. (ผู้จัดการ)", help: "หัวหน้าแผนกใช้ \"C.\" ผู้จัดการใช้ \"M.\"" },
+    { key: "dutyShift", label: "รอบ Duty", type: "text", row: "duty2", placeholder: "เช่น รอบเช้า หรือ รอบบ่าย" },
+    { key: "escalateTo", label: "ผู้ที่ต้องประสานแจ้งต่อ (ถ้ามี)", type: "text", row: "duty2", placeholder: "เช่น C8" }
   ];
 
   function personTypeField(key) {
@@ -545,11 +548,7 @@ body.has-actions{padding-bottom:90px;}
         yesnoField("relativeReceived", "มีญาติมารับหรือไม่"),
         { key: "relativeReceivedTime", label: "เวลาญาติมารับ", type: "time", showIf: { field: "relativeReceived", equals: "yes" } },
         yesnoField("sentHospital", "นำส่งโรงพยาบาลหรือไม่"),
-        { key: "hospital", label: "โรงพยาบาล", type: "text", showIf: { field: "sentHospital", equals: "yes" } },
-        { key: "dutyNamePatient", label: "ชื่อ Duty ที่รับทราบ", type: "text", row: "p5", placeholder: "เช่น คุณสมชาย ใจดี" },
-        { key: "dutyPosition", label: "ตำแหน่ง Duty", type: "text", row: "p5", placeholder: "เช่น C. (หัวหน้าแผนก) หรือ M. (ผู้จัดการ)" },
-        { key: "dutyShift", label: "รอบ Duty", type: "text", placeholder: "เช่น รอบเช้า หรือ รอบบ่าย" },
-        { key: "escalateTo", label: "ผู้ที่ต้องประสานแจ้งต่อ (เช่น C8)", type: "text" }
+        { key: "hospital", label: "โรงพยาบาล", type: "text", showIf: { field: "sentHospital", equals: "yes" } }
       ]
     },
 
@@ -996,7 +995,8 @@ body.has-actions{padding-bottom:90px;}
       };
     },
 
-    patient: function (e) {
+    patient: function (e, c) {
+      c = c || {};
       var isStaff = e.personType === "staff";
       var personLabel = optLabel(opts().PERSON_TYPE_OPTIONS, e.personType);
 
@@ -1055,10 +1055,10 @@ body.has-actions{padding-bottom:90px;}
       var firstAidParagraph = has(firstAidClauses) ? ("เบื้องต้น " + firstAidClauses + (has(followUpClauses) ? " " + followUpClauses : "")) : followUpClauses;
 
       /* ย่อหน้าปิด: แจ้ง Duty */
-      var dutyClause = joinClauses([e.dutyNamePatient, e.dutyPosition, e.dutyShift]);
+      var dutyClause = joinClauses([c.dutyName, c.dutyPosition, c.dutyShift]);
       var closingText = has(dutyClause)
         ? ("จากเหตุการณ์ดังกล่าว ทางฝ่ายป้องกันฯ ได้แจ้ง" + dutyClause + " รับทราบเหตุการณ์ที่เกิดขึ้น" +
-          (has(e.escalateTo) ? " พร้อมประสานแจ้ง " + e.escalateTo : "") +
+          (has(c.escalateTo) ? " พร้อมประสานแจ้ง " + c.escalateTo : "") +
           " และจัดทำรายงานเหตุ 24 ชม. ต่อไปครับ รายละเอียดจะแจ้งให้ทราบต่อไปครับ")
         : "";
 
@@ -1307,7 +1307,7 @@ body.has-actions{padding-bottom:90px;}
     var c = record.core || {};
     var e = record.extra || {};
     var builder = BUILDERS[record.typeId];
-    var built = builder ? builder(e) : defaultBuilt(typeLabel);
+    var built = builder ? builder(e, c) : defaultBuilt(typeLabel);
 
     var desc = built.desc || typeLabel;
     var openingDesc = built.openingDesc || desc;
@@ -1368,8 +1368,11 @@ body.has-actions{padding-bottom:90px;}
     }
 
     /* 5. แจ้ง Duty / ปิดท้าย */
-    lines.push(built.closingText || ("จากเหตุการณ์ที่เกิดขึ้น ได้แจ้ง" + (has(c.dutyName) ? c.dutyName + " " : "ผู้เกี่ยวข้อง") +
-      "รับทราบเหตุการณ์ที่เกิดขึ้น และจัดทำรายงานเหตุ 24 ชม. ต่อไปครับ รายละเอียดจะแจ้งทางเมลให้ทราบต่อไปครับ"));
+    var dutyClause = joinClauses([c.dutyName, c.dutyPosition, c.dutyShift]);
+    var genericClosing = "จากเหตุการณ์ที่เกิดขึ้น ได้แจ้ง" + (has(dutyClause) ? dutyClause + " " : "ผู้เกี่ยวข้อง") +
+      "รับทราบเหตุการณ์ที่เกิดขึ้น" + (has(c.escalateTo) ? " พร้อมประสานแจ้ง " + c.escalateTo : "") +
+      " และจัดทำรายงานเหตุ 24 ชม. ต่อไปครับ รายละเอียดจะแจ้งทางเมลให้ทราบต่อไปครับ";
+    lines.push(built.closingText || genericClosing);
 
     return lines.join("\n");
   }
