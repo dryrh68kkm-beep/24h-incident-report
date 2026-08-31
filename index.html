@@ -100,11 +100,6 @@ button{font-family:inherit;}
 .incrow .m .t{font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .incrow .m .s{font-size:11.5px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .badge{font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:999px;flex:none;white-space:nowrap;}
-.rowacts{display:flex;gap:4px;flex:none;}
-.rowacts button{
-  border:1px solid var(--border);background:#fff;border-radius:8px;width:30px;height:30px;
-  font-size:13px;cursor:pointer;color:var(--muted);
-}
 .st-orange{background:var(--orange-soft);color:var(--orange);}
 .st-green{background:var(--green-soft);color:var(--green);}
 .st-blue{background:var(--blue-soft);color:var(--blue);}
@@ -177,7 +172,6 @@ select{
 .btn.pri{background:var(--navy);color:#fff;border-color:transparent;}
 .btn.danger{background:var(--red-soft);color:var(--red);border-color:transparent;}
 .btn.quiet{background:transparent;border-color:transparent;color:var(--muted);}
-.dashed{width:100%;padding:13px;border:1.5px dashed var(--border);border-radius:10px;background:transparent;color:var(--navy);font-size:13.5px;font-weight:600;cursor:pointer;margin-top:10px;}
 
 .formtop{margin:10px 0 4px;}
 .formtop .btn.quiet{width:auto;flex:none;padding:6px 2px;color:var(--navy);font-size:13.5px;font-weight:700;}
@@ -192,17 +186,6 @@ select{
 .actions .sec{background:var(--field);color:#0D1420;border:1px solid var(--border);}
 .actions .pri{background:var(--navy);color:#fff;}
 body.has-actions{padding-bottom:90px;}
-
-/* ===== SEARCH / FILTER ===== */
-.searchbar{position:relative;margin-top:14px;}
-.searchbar input{padding-left:38px;}
-.searchbar .ic{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:15px;}
-.filterrow{display:flex;gap:8px;margin-top:10px;overflow-x:auto;padding-bottom:2px;}
-.filterchip{
-  flex:none;padding:8px 14px;border-radius:999px;border:1px solid var(--border);background:var(--card);
-  font-size:12.5px;font-weight:600;color:var(--label);cursor:pointer;white-space:nowrap;
-}
-.filterchip.on{background:var(--navy);color:#fff;border-color:transparent;}
 
 /* ===== TOAST ===== */
 .toast{
@@ -232,9 +215,6 @@ body.has-actions{padding-bottom:90px;}
   .ynbtn.on{background:#1B3A6B!important;color:#fff!important;border-color:transparent!important;}
   .ynbtn.on.yes{background:#D0342C!important;}
   .ynbtn.on.no{background:#1E7D46!important;}
-  .filterchip{background:#FFFFFF!important;color:#4B5563!important;}
-  .filterchip.on{background:#1B3A6B!important;color:#fff!important;}
-  .rowacts button{background:#FFFFFF!important;color:#8A93A3!important;}
 }
 
 </style>
@@ -247,7 +227,6 @@ body.has-actions{padding-bottom:90px;}
   </div>
   <nav>
     <a href="#" id="navHome" class="on">หน้าแรก</a>
-    <a href="#" id="navHistory">ประวัติ</a>
   </nav>
 </div></div>
 
@@ -258,7 +237,7 @@ body.has-actions{padding-bottom:90px;}
     <div class="stats" id="stats"></div>
     <div class="section-title">เลือกประเภทเหตุการณ์เพื่อเริ่มรายงาน</div>
     <div class="typegrid" id="homeTypegrid"></div>
-    <div class="section-title">เหตุการณ์ล่าสุด <a href="#" id="homeSeeAll">ดูทั้งหมด →</a></div>
+    <div class="section-title">เหตุการณ์ล่าสุด</div>
     <div class="inclist" id="homeRecent"><div class="empty">ยังไม่มีรายการ</div></div>
   </div>
 
@@ -309,20 +288,6 @@ body.has-actions{padding-bottom:90px;}
         <button class="btn danger" id="btnDelete">ลบเหตุการณ์นี้</button>
       </div>
     </div>
-  </div>
-
-  <!-- SCREEN: HISTORY -->
-  <div class="screen" id="screenHistory" style="display:none">
-    <div class="searchbar">
-      <span class="ic">🔎</span>
-      <input type="text" id="q" placeholder="ค้นหา: วันที่ / เวลา / ชื่อ / สถานที่ / ทะเบียนรถ / คำค้น">
-    </div>
-    <div class="f" style="margin-top:12px">
-      <select id="typeFilter"><option value="">ทุกประเภทเหตุการณ์</option></select>
-    </div>
-    <div class="section-title" style="margin-top:18px">รายการเหตุการณ์ <span id="resultCount"></span></div>
-    <div class="inclist" id="histList"><div class="empty">ยังไม่มีรายการ</div></div>
-    <button class="dashed" id="btnExport">สำรองข้อมูลทั้งหมดเป็น JSON</button>
   </div>
 
 </div>
@@ -405,13 +370,6 @@ body.has-actions{padding-bottom:90px;}
     return pad(d.getHours()) + ":" + pad(d.getMinutes());
   }
 
-  function downloadBlob(blob, filename) {
-    var a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  }
-
   global.App = {
     pad: pad,
     escapeHtml: escapeHtml,
@@ -420,8 +378,7 @@ body.has-actions{padding-bottom:90px;}
     shareToLine: shareToLine,
     shareViaSystem: shareViaSystem,
     todayISO: todayISO,
-    nowHM: nowHM,
-    downloadBlob: downloadBlob
+    nowHM: nowHM
   };
 })(window);
 
@@ -883,10 +840,6 @@ body.has-actions{padding-bottom:90px;}
     return copy;
   }
 
-  function exportJSON() {
-    return JSON.stringify(readList(), null, 2);
-  }
-
   /* ฉบับร่างระหว่างกรอก กันข้อมูลหายถ้าเผลอปิดหน้า/สลับแอป */
   function saveDraft(draft) {
     try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch (e) {}
@@ -908,7 +861,6 @@ body.has-actions{padding-bottom:90px;}
     update: update,
     remove: remove,
     duplicate: duplicate,
-    exportJSON: exportJSON,
     nextId: nextId,
     saveDraft: saveDraft,
     loadDraft: loadDraft,
@@ -1410,18 +1362,15 @@ body.has-actions{padding-bottom:90px;}
 var $ = function(id){ return document.getElementById(id); };
 
 /* ================= SCREEN SWITCHING ================= */
-var SCREENS = ["Home","Report","History"];
+var SCREENS = ["Home","Report"];
 function showScreen(name){
   SCREENS.forEach(function(s){ $("screen"+s).style.display = (s===name?"":"none"); });
   $("navHome").classList.toggle("on", name==="Home");
-  $("navHistory").classList.toggle("on", name==="History");
   window.scrollTo(0,0);
   if(name !== "Report"){ $("actionsBar").style.display = "none"; document.body.classList.remove("has-actions"); }
   if(name === "Home") HomeScreen.render();
-  if(name === "History") HistoryScreen.render();
 }
 $("navHome").addEventListener("click", function(e){ e.preventDefault(); showScreen("Home"); });
-$("navHistory").addEventListener("click", function(e){ e.preventDefault(); showScreen("History"); });
 
 /* ปัดนิ้วไปทางขวา (ที่ไหนก็ได้บนหน้าจอ ไม่ใช่แค่ขอบ กันชนกับท่าทาง back ของ Safari) = ย้อนกลับไปหน้าแรก */
 (function(){
@@ -1484,7 +1433,6 @@ var HomeScreen = (function(){
       recentBox.innerHTML = "<div class='empty'>ยังไม่มีรายการ</div>";
     }
   }
-  $("homeSeeAll").addEventListener("click", function(e){ e.preventDefault(); showScreen("History"); });
   return { render: render };
 })();
 
@@ -1750,93 +1698,10 @@ var ReportScreen = (function(){
     if(!confirm("ลบเหตุการณ์ "+record.id+" ออกถาวร?")) return;
     Storage.remove(record.id);
     App.toast("ลบแล้ว");
-    showScreen("History");
+    showScreen("Home");
   });
 
   return { open: open };
-})();
-
-/* ================= HISTORY ================= */
-var HistoryScreen = (function(){
-  var typeVal = "", qVal = "", bound = false;
-
-  function bindOnce(){
-    if(bound) return;
-    bound = true;
-    var tf = $("typeFilter");
-    IncidentTypes.TYPES.forEach(function(t){
-      var o = document.createElement("option");
-      o.value = t.id; o.textContent = t.icon + " " + t.label;
-      tf.appendChild(o);
-    });
-    tf.addEventListener("change", function(){ typeVal = tf.value; render(); });
-
-    $("q").addEventListener("input", function(){ qVal = this.value.trim().toLowerCase(); render(); });
-
-    $("btnExport").addEventListener("click", function(){
-      var all = Storage.all();
-      if(!all.length){ App.toast("ยังไม่มีข้อมูลให้สำรอง"); return; }
-      var blob = new Blob([Storage.exportJSON()], {type:"application/json"});
-      App.downloadBlob(blob, "incident24_backup_"+App.todayISO()+".json");
-    });
-  }
-
-  function matchesQuery(r, q){
-    if(!q) return true;
-    var hay = [
-      r.id, r.core && r.core.incidentDate, r.core && r.core.incidentTime, r.core && r.core.location,
-      r.core && r.core.reporterName,
-      r.core && r.core.details, r.core && r.core.actionResult, JSON.stringify(r.extra || {})
-    ].join(" ").toLowerCase();
-    return hay.indexOf(q) !== -1;
-  }
-
-  function render(){
-    bindOnce();
-    var all = Storage.all().slice().sort(function(a,b){ return new Date(b.createdAt||0) - new Date(a.createdAt||0); });
-    var filtered = all.filter(function(r){
-      if(typeVal && r.typeId !== typeVal) return false;
-      if(!matchesQuery(r, qVal)) return false;
-      return true;
-    });
-    $("resultCount").textContent = "(" + filtered.length + ")";
-    var box = $("histList");
-    if(!filtered.length){ box.innerHTML = "<div class='empty'>ไม่พบรายการที่ตรงกับเงื่อนไข</div>"; return; }
-
-    box.innerHTML = "";
-    filtered.forEach(function(r){
-      var t = IncidentTypes.getType(r.typeId);
-      var row = document.createElement("div");
-      row.className = "incrow";
-      row.innerHTML =
-        "<div class='ic'>"+(t?t.icon:"📝")+"</div>"+
-        "<div class='m'><div class='t'>"+App.escapeHtml(t?t.label:r.typeId)+" · "+App.escapeHtml(r.id||"")+"</div>"+
-        "<div class='s'>"+App.escapeHtml((r.core&&r.core.location)||"")+" · "+App.escapeHtml((r.core&&r.core.incidentDate)||"")+" "+App.escapeHtml((r.core&&r.core.incidentTime)||"")+"</div></div>"+
-        "<div class='rowacts'><button data-a='dup' title='ทำซ้ำ'>⧉</button><button data-a='del' title='ลบ'>🗑</button></div>";
-      row.addEventListener("click", function(e){
-        if(e.target.closest("[data-a]")) return;
-        ReportScreen.open({ id: r.id });
-        showScreen("Report");
-      });
-      row.querySelector("[data-a=dup]").addEventListener("click", function(e){
-        e.stopPropagation();
-        var dup = Storage.duplicate(r.id);
-        if(!dup){ App.toast("ทำซ้ำไม่สำเร็จ"); return; }
-        ReportScreen.open({ record: dup });
-        showScreen("Report");
-      });
-      row.querySelector("[data-a=del]").addEventListener("click", function(e){
-        e.stopPropagation();
-        if(!confirm("ลบเหตุการณ์ "+r.id+" ออกถาวร?")) return;
-        Storage.remove(r.id);
-        App.toast("ลบแล้ว");
-        render();
-      });
-      box.appendChild(row);
-    });
-  }
-
-  return { render: render };
 })();
 
 /* ================= BOOT ================= */
