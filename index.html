@@ -720,7 +720,7 @@ body.has-actions{padding-bottom:90px;}
         { key: "approxAge", label: "อายุโดยประมาณ", type: "number", unit: "ปี", row: "t1" },
         { key: "itemList", label: "รายการสินค้า", type: "textarea", placeholder: "เช่น เสื้อผ้า 2 ชิ้น มูลค่ารวมประมาณ 500 บาท" },
         { key: "quantity", label: "จำนวน", type: "text", row: "t2" },
-        { key: "value", label: "มูลค่า", type: "number", unit: "บาท", row: "t2" },
+        { key: "value", label: "มูลค่า", type: "number", unit: "บาท", step: "0.01", row: "t2" },
         { key: "method", label: "วิธีการก่อเหตุ", type: "textarea", placeholder: "เช่น ซ่อนสินค้าไว้ในกระเป๋าแล้วเดินผ่านจุดชำระเงิน" },
         { key: "foundPoint", label: "จุดที่ตรวจพบ", type: "text" },
         { key: "detainedPoint", label: "จุดที่ควบคุมตัว", type: "text" },
@@ -834,7 +834,7 @@ body.has-actions{padding-bottom:90px;}
         { key: "productGroupOther", label: "ระบุกลุ่มสินค้า", type: "text", showIf: { field: "productGroup", equals: "other" } },
         { key: "item", label: "รายการสินค้า / ทรัพย์สิน", type: "text" },
         { key: "quantity", label: "จำนวน", type: "text", row: "dr1" },
-        { key: "damageValue", label: "มูลค่าความเสียหาย", type: "number", unit: "บาท", row: "dr1" },
+        { key: "damageValue", label: "มูลค่าความเสียหาย", type: "number", unit: "บาท", step: "0.01", row: "dr1" },
         { key: "damage", label: "ลักษณะความเสียหาย", type: "textarea", placeholder: "เช่น กล่องสินค้าตกจากชั้นวางและแตกเสียหาย" },
         { key: "cause", label: "สาเหตุเบื้องต้น", type: "text" },
         { key: "action", label: "การดำเนินการ", type: "textarea", placeholder: "เช่น เก็บกวาดพื้นที่และแจ้งแผนกที่เกี่ยวข้องดำเนินการต่อ", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" },
@@ -959,6 +959,13 @@ body.has-actions{padding-bottom:90px;}
       record.typeId = "accident";
       if (!record.extra.accidentType) record.extra.accidentType = "fall";
     }
+    /* typeId ที่ไม่รู้จัก (ไม่ใช่ legacy "fall" ซึ่งจัดการไปแล้วด้านบน) -> migrate เป็น "other" ใน memory
+       ให้ UI (showForm) และ ReportGenerator (BUILDERS.other) ใช้ typeId เดียวกัน ไม่เขียนทับ localStorage จนกว่าจะ Save */
+    if (record.typeId !== "other" && global.IncidentTypes && !global.IncidentTypes.getType(record.typeId)) {
+      record.originalTypeId = record.typeId;
+      record.typeId = "other";
+      if (!record.extra.eventName) record.extra.eventName = record.originalTypeId;
+    }
     /* record เก่าที่ยังไม่มี core.recipients (ระบบผู้รับทราบหลายคน) แต่มี core.dutyName เดิม
        -> แปลงเป็น recipient 1 รายการใน memory เท่านั้น (ไม่ลบ/เขียนทับ dutyName เดิมใน localStorage) */
     if (!Array.isArray(record.core.recipients) && record.core.dutyName) {
@@ -1017,6 +1024,9 @@ body.has-actions{padding-bottom:90px;}
     delete copy.id;
     delete copy.createdAt;
     delete copy.updatedAt;
+    /* ห้ามให้สำเนาใหม่ติดข้อความ Preview เดิมมาด้วย -> ให้ ReportGenerator สร้างใหม่จาก form เสมอ */
+    delete copy.reportText;
+    copy.reportEdited = false;
     return copy;
   }
 
@@ -1334,7 +1344,12 @@ body.has-actions{padding-bottom:90px;}
     },
 
     fight: function (e) {
-      var disciplineLabel = e.discipline === "other" ? e.disciplineOther : optLabel(opts().DISCIPLINE_OPTIONS, e.discipline);
+      /* discipline ใช้ได้เฉพาะกรณี personType="staff" เท่านั้น (ฟิลด์นี้ showIf ผูกกับ personType ในฟอร์ม)
+         กันไว้อีกชั้นเผื่อมีค่าเก่าค้างอยู่ใน record.extra จากก่อนที่ฟอร์มจะ clear ค่าที่ซ่อนให้อัตโนมัติ */
+      var disciplineLabel = "";
+      if (e.personType === "staff") {
+        disciplineLabel = e.discipline === "other" ? e.disciplineOther : optLabel(opts().DISCIPLINE_OPTIONS, e.discipline);
+      }
       var findings = joinClauses([
         has(e.parties) ? "ผู้เกี่ยวข้อง " + e.parties : "",
         has(e.cause) ? "สาเหตุเบื้องต้น " + e.cause : "",
@@ -1761,9 +1776,11 @@ var ReportScreen = (function(){
         "<div class='ynbtn no"+(val==="no"?" on":"")+"' data-val='no'>ไม่ใช่</div>"+
         "</div>"+help+"</div>";
     }
-    var inputType = f.type === "number" ? "number" : (f.type === "date" ? "date" : (f.type === "time" ? "time" : "text"));
+    var inputType = f.type === "number" ? "number" : (f.type === "date" ? "date" : (f.type === "time" ? "time" : (f.type === "tel" ? "tel" : "text")));
+    var inputmode = f.type === "tel" ? " inputmode='tel'" : "";
+    var step = f.step ? " step='"+App.escapeHtml(f.step)+"'" : "";
     return "<div class='f'><label>"+App.escapeHtml(f.label)+reqStar+unit+"</label>"+
-      "<input type='"+inputType+"' data-scope='"+scope+"' data-key='"+f.key+"' value=\""+App.escapeHtml(val)+"\""+placeholder+">"+help+"</div>";
+      "<input type='"+inputType+"' data-scope='"+scope+"' data-key='"+f.key+"' value=\""+App.escapeHtml(val)+"\""+placeholder+inputmode+step+">"+help+"</div>";
   }
 
   function renderRowGroup(fields, scope, dataObj, container){
@@ -1799,6 +1816,21 @@ var ReportScreen = (function(){
     var set = {};
     fields.forEach(function(f){ if(f.showIf) set[f.showIf.field] = true; });
     return set;
+  }
+  /* เมื่อ controller field เปลี่ยนค่าแล้ว field ใดไม่เข้าเงื่อนไข showIf อีกต่อไป ให้ล้างค่าที่ค้างอยู่ใน dataObj
+     กันไม่ให้ ReportGenerator เอาค่าที่ผู้ใช้มองไม่เห็นในฟอร์มแล้วไปใช้ (เช่น personType!=staff ต้องล้าง discipline)
+     วนซ้ำจนไม่มีอะไรเปลี่ยน เพื่อรองรับ showIf ต่อกันเป็นทอด ๆ (discipline ซ่อน -> disciplineOther ก็ต้องซ่อนตาม) */
+  function clearHiddenConditionalValues(fields, dataObj){
+    var changed = true;
+    while(changed){
+      changed = false;
+      fields.forEach(function(f){
+        if(f.showIf && !fieldVisible(f, dataObj) && dataObj[f.key] !== undefined && dataObj[f.key] !== ""){
+          dataObj[f.key] = "";
+          changed = true;
+        }
+      });
+    }
   }
 
   function bindFieldEvents(container, ctrlKeys, onCtrlChange){
@@ -1935,7 +1967,12 @@ var ReportScreen = (function(){
       var renderExtra = function(){
         extraBox.innerHTML = "";
         renderRowGroup(visibleFields(typeDef.extra, record.extra), "extra", record.extra, extraBox);
-        bindFieldEvents(extraBox, ctrlKeys, renderExtra);
+        bindFieldEvents(extraBox, ctrlKeys, onExtraCtrlChange);
+      };
+      var onExtraCtrlChange = function(){
+        clearHiddenConditionalValues(typeDef.extra, record.extra);
+        autosave();
+        renderExtra();
       };
       renderExtra();
     } else {
