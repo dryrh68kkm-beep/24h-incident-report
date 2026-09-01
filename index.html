@@ -13,8 +13,6 @@
   color-scheme: light only;
 
   --navy:#1B3A6B;
-  --navy-dark:#122A4E;
-  --navy-soft:#EAF0F9;
   --bg:#F4F6F8;
   --card:#FFFFFF;
   --field:#F7F8FA;
@@ -26,11 +24,8 @@
   --red:#D0342C;
   --red-soft:#FDECEB;
   --orange:#C9700B;
-  --orange-soft:#FCF1E2;
   --green:#1E7D46;
-  --green-soft:#E9F5EE;
   --blue:#1D62C7;
-  --blue-soft:#EAF1FC;
 
   --sans:"Leelawadee UI",Tahoma,Arial,sans-serif;
 }
@@ -70,7 +65,6 @@ button{font-family:inherit;}
 .stat span{display:block;font-size:10.5px;color:var(--muted);margin-top:4px;line-height:1.3;}
 
 .section-title{font-size:14px;font-weight:700;color:var(--label);margin:22px 0 10px;display:flex;justify-content:space-between;align-items:center;}
-.section-title a{font-size:12.5px;font-weight:600;color:var(--navy);}
 
 /* ===== TYPE GRID (large tap cards) ===== */
 .typegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
@@ -89,7 +83,7 @@ button{font-family:inherit;}
 .typecard.c-green{border-top:3px solid var(--green);}
 .typecard.c-blue{border-top:3px solid var(--blue);}
 
-/* ===== RECENT LIST / HISTORY ROWS ===== */
+/* ===== RECENT LIST ROWS ===== */
 .inclist{display:flex;flex-direction:column;gap:9px;}
 .incrow{
   background:var(--card);border-radius:12px;padding:13px 14px;display:flex;align-items:center;gap:12px;
@@ -99,11 +93,6 @@ button{font-family:inherit;}
 .incrow .m{flex:1;min-width:0;}
 .incrow .m .t{font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .incrow .m .s{font-size:11.5px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.badge{font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:999px;flex:none;white-space:nowrap;}
-.st-orange{background:var(--orange-soft);color:var(--orange);}
-.st-green{background:var(--green-soft);color:var(--green);}
-.st-blue{background:var(--blue-soft);color:var(--blue);}
-.st-gray{background:var(--field);color:var(--muted);}
 .empty{padding:36px 14px;text-align:center;color:var(--muted);font-size:13.5px;}
 
 /* ===== CARDS / FORM ===== */
@@ -381,14 +370,6 @@ body.has-actions{padding-bottom:90px;}
     }, 250);
   }
 
-  function shareViaSystem(text, title) {
-    if (navigator.share) {
-      navigator.share({ title: title || "รายงานเหตุการณ์ 24 ชั่วโมง", text: text }).catch(function () {});
-    } else {
-      copyText(text, "เครื่องนี้ไม่รองรับการแชร์ — คัดลอกให้แล้ว");
-    }
-  }
-
   function todayISO() {
     var d = new Date();
     return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
@@ -399,12 +380,10 @@ body.has-actions{padding-bottom:90px;}
   }
 
   global.App = {
-    pad: pad,
     escapeHtml: escapeHtml,
     toast: toast,
     copyText: copyText,
     shareToLine: shareToLine,
-    shareViaSystem: shareViaSystem,
     todayISO: todayISO,
     nowHM: nowHM
   };
@@ -426,11 +405,6 @@ body.has-actions{padding-bottom:90px;}
     { value: "staff", label: "พนักงาน" },
     { value: "tenant", label: "ร้านค้าเช่า" },
     { value: "outsider", label: "บุคคลภายนอก" }
-  ];
-
-  var YESNO_OPTIONS = [
-    { value: "yes", label: "ใช่" },
-    { value: "no", label: "ไม่ใช่" }
   ];
 
   var GENDER_OPTIONS = [
@@ -478,18 +452,6 @@ body.has-actions{padding-bottom:90px;}
     { value: "freshfood", label: "Fresh Food" },
     { value: "dryfood", label: "Dry Food" },
     { value: "pharmacy", label: "Pharmacy" },
-    { value: "other", label: "อื่น ๆ" }
-  ];
-
-  var CUSTOMER_ISSUE_OPTIONS = [
-    { value: "cart", label: "รถเข็น" },
-    { value: "fall", label: "ลื่นล้ม" },
-    { value: "indecent", label: "อนาจาร" },
-    { value: "secret_photo", label: "แอบถ่าย" },
-    { value: "price_tag", label: "ป้ายราคา" },
-    { value: "expired", label: "สินค้าหมดอายุ" },
-    { value: "tenant", label: "ร้านค้าเช่า" },
-    { value: "help", label: "ขอความช่วยเหลือ" },
     { value: "other", label: "อื่น ๆ" }
   ];
 
@@ -831,14 +793,12 @@ body.has-actions{padding-bottom:90px;}
     TYPES: TYPES,
     CORE_FIELDS: CORE_FIELDS,
     PERSON_TYPE_OPTIONS: PERSON_TYPE_OPTIONS,
-    YESNO_OPTIONS: YESNO_OPTIONS,
     GENDER_OPTIONS: GENDER_OPTIONS,
     RECIPIENT_POSITION_OPTIONS: RECIPIENT_POSITION_OPTIONS,
     DUTY_SHIFT_OPTIONS: DUTY_SHIFT_OPTIONS,
     PARKING_ZONE_OPTIONS: PARKING_ZONE_OPTIONS,
     FIRE_EXTINGUISHER_OPTIONS: FIRE_EXTINGUISHER_OPTIONS,
     PRODUCT_GROUP_OPTIONS: PRODUCT_GROUP_OPTIONS,
-    CUSTOMER_ISSUE_OPTIONS: CUSTOMER_ISSUE_OPTIONS,
     DISCIPLINE_OPTIONS: DISCIPLINE_OPTIONS,
     getType: getType
   };
@@ -1014,7 +974,6 @@ body.has-actions{padding-bottom:90px;}
     update: update,
     remove: remove,
     duplicate: duplicate,
-    nextId: nextId,
     saveDraft: saveDraft,
     loadDraft: loadDraft,
     clearDraft: clearDraft
@@ -1548,7 +1507,7 @@ body.has-actions{padding-bottom:90px;}
     return lines.join("\n");
   }
 
-  global.ReportGenerator = { generate: generate, thaiDate: thaiDate };
+  global.ReportGenerator = { generate: generate };
 })(window);
 </script>
 <script>
