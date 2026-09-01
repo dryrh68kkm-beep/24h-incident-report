@@ -516,13 +516,14 @@ body.has-actions{padding-bottom:90px;}
   function personTypeField(key) {
     return { key: key || "personType", label: "ประเภทบุคคล", type: "select", options: PERSON_TYPE_OPTIONS };
   }
-  /* ฟิลด์เสริมตามประเภทบุคคล: แผนก/ฝ่าย (พนักงาน) หรือ ชื่อร้านค้า (ร้านค้าเช่า) — เปิดเฉพาะที่เกี่ยวข้อง */
+  /* ฟิลด์เสริมตามประเภทบุคคล: แผนก/ฝ่าย (พนักงาน), ชื่อร้านค้า (ร้านค้าเช่า), เบอร์โทร (ลูกค้า) — เปิดเฉพาะที่เกี่ยวข้อง */
   function personDetailFields(personKey) {
     var pk = personKey || "personType";
     return [
       { key: "department", label: "แผนก", type: "text", row: "persondept", showIf: { field: pk, equals: "staff" } },
       { key: "division", label: "ฝ่าย", type: "text", row: "persondept", showIf: { field: pk, equals: "staff" } },
-      { key: "shopName", label: "ชื่อร้านค้า", type: "text", showIf: { field: pk, equals: "tenant" } }
+      { key: "shopName", label: "ชื่อร้านค้า", type: "text", showIf: { field: pk, equals: "tenant" } },
+      { key: "personPhone", label: "เบอร์โทร (ถ้าทราบ)", type: "tel", showIf: { field: pk, equals: "customer" } }
     ];
   }
   function yesnoField(key, label) {
@@ -661,7 +662,8 @@ body.has-actions{padding-bottom:90px;}
       id: "fight", label: "ทะเลาะวิวาท", icon: "😠", color: "red",
       extra: [
         { key: "parties", label: "ผู้เกี่ยวข้อง / คู่กรณี", type: "textarea", placeholder: "เช่น พนักงาน 2 คนทะเลาะกันเรื่องแบ่งงาน", help: "ระบุตัวบุคคลที่เกี่ยวข้องและความสัมพันธ์ระหว่างคู่กรณีโดยย่อ" },
-        personTypeField(),
+        personTypeField()
+      ].concat(personDetailFields()).concat([
         { key: "cause", label: "สาเหตุเบื้องต้น", type: "text" },
         yesnoField("hasInjury", "มีผู้ได้รับบาดเจ็บหรือไม่"),
         yesnoField("hasCCTV", "มี CCTV หรือไม่"),
@@ -673,7 +675,7 @@ body.has-actions{padding-bottom:90px;}
         },
         { key: "disciplineOther", label: "ระบุบทลงโทษ", type: "text", showIf: { field: "discipline", equals: "other" } },
         moreInfoField()
-      ]
+      ])
     },
 
     {
@@ -743,36 +745,13 @@ body.has-actions{padding-bottom:90px;}
       extra: [
         { key: "asset", label: "ทรัพย์สินที่เสียหาย", type: "text" },
         { key: "damage", label: "ลักษณะความเสียหาย", type: "textarea", placeholder: "เช่น กระจกประตูทางเข้าแตกร้าว", help: "อธิบายลักษณะและขอบเขตความเสียหายที่พบโดยย่อ" },
+        { key: "involvedName", label: "ผู้กระทำ / ผู้เกี่ยวข้อง (ถ้ามี)", type: "text" },
+        personTypeField()
+      ].concat(personDetailFields()).concat([
         { key: "cause", label: "สาเหตุเบื้องต้น", type: "text" },
         { key: "action", label: "การแก้ไข / การดำเนินการ", type: "textarea", placeholder: "เช่น กั้นพื้นที่และประสานช่างเข้าซ่อมแซม", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" },
         moreInfoField()
-      ]
-    },
-    {
-      id: "customer", label: "เหตุเกี่ยวกับลูกค้า", icon: "🧑‍🤝‍🧑", color: "orange",
-      extra: [
-        { key: "customerName", label: "ชื่อลูกค้า (ถ้าทราบ)", type: "text", row: "cu1" },
-        { key: "customerPhone", label: "เบอร์โทรลูกค้า (ถ้าทราบ)", type: "tel", row: "cu1" },
-        {
-          key: "issueType", label: "ประเภทเหตุการณ์", type: "select",
-          options: CUSTOMER_ISSUE_OPTIONS
-        },
-        { key: "issueTypeOther", label: "ระบุประเภทเหตุการณ์", type: "text", showIf: { field: "issueType", equals: "other" } },
-        { key: "issue", label: "รายละเอียดเหตุการณ์", type: "textarea", placeholder: "เช่น ลูกค้าลื่นล้มบริเวณทางเข้าห้าง", help: "อธิบายเหตุการณ์ที่เกิดขึ้น ลำดับเหตุ และสิ่งที่ตรวจสอบพบ" },
-        { key: "action", label: "การช่วยเหลือ / การดำเนินการ", type: "textarea", placeholder: "เช่น ปฐมพยาบาลเบื้องต้นและแจ้งหัวหน้างานรับทราบ" },
-        { key: "resultText", label: "ผลการดำเนินการ", type: "textarea", placeholder: "เช่น ลูกค้าพึงพอใจและไม่ติดใจเอาความ" },
-        moreInfoField()
-      ]
-    },
-    {
-      id: "staff", label: "เหตุเกี่ยวกับพนักงาน", icon: "🪪", color: "orange",
-      extra: [
-        { key: "staffName", label: "ชื่อพนักงาน", type: "text" },
-        { key: "department", label: "แผนก / ฝ่าย", type: "text" },
-        { key: "issue", label: "เหตุการณ์ที่เกิดขึ้น", type: "textarea", placeholder: "เช่น พนักงานมีอาการหน้ามืดและหายใจไม่สะดวกระหว่างปฏิบัติงาน", help: "อธิบายสิ่งที่พบและลำดับเหตุการณ์โดยย่อ" },
-        { key: "action", label: "การดำเนินการ", type: "textarea", placeholder: "เช่น ประสานร้านยาเพรียวเข้าตรวจอาการและให้พนักงานพักสังเกตอาการ", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" },
-        moreInfoField()
-      ]
+      ])
     },
     {
       id: "electrical", label: "ไฟฟ้า / ระบบอาคารขัดข้อง", icon: "⚡", color: "orange",
@@ -813,11 +792,13 @@ body.has-actions{padding-bottom:90px;}
       id: "suspicious", label: "บุคคลต้องสงสัย", icon: "🕵️", color: "orange",
       extra: [
         { key: "description", label: "ลักษณะบุคคล", type: "textarea", placeholder: "เช่น ชายไทย สูงประมาณ 170 ซม. สวมเสื้อดำ กางเกงยีนส์" },
+        personTypeField()
+      ].concat(personDetailFields()).concat([
         { key: "behavior", label: "พฤติกรรมที่พบ", type: "textarea", placeholder: "เช่น เดินวนไปมาบริเวณชั้นวางสินค้ามูลค่าสูง" },
         yesnoField("hasCCTV", "มี CCTV หรือไม่"),
         { key: "action", label: "การติดตาม / การดำเนินการ", type: "textarea", placeholder: "เช่น ติดตามสังเกตการณ์และแจ้งเจ้าหน้าที่รักษาความปลอดภัย", help: "ระบุสิ่งที่ฝ่ายป้องกันฯ หรือผู้เกี่ยวข้องดำเนินการแล้ว" },
         moreInfoField()
-      ]
+      ])
     },
     {
       id: "lost_property", label: "พบทรัพย์สินสูญหาย", icon: "🔎", color: "green",
@@ -927,8 +908,22 @@ body.has-actions{padding-bottom:90px;}
       record.typeId = "accident";
       if (!record.extra.accidentType) record.extra.accidentType = "fall";
     }
-    /* typeId ที่ไม่รู้จัก (ไม่ใช่ legacy "fall" ซึ่งจัดการไปแล้วด้านบน) -> migrate เป็น "other" ใน memory
-       ให้ UI (showForm) และ ReportGenerator (BUILDERS.other) ใช้ typeId เดียวกัน ไม่เขียนทับ localStorage จนกว่าจะ Save */
+    /* legacy typeId "customer"/"staff" (ลบออกจาก TYPES แล้ว รวมเข้าเป็นข้อมูลบุคคล (personType)
+       ในเหตุการณ์หลักแทน) -> migrate เป็น "other" ใน memory พร้อม eventName ภาษาไทยที่อ่านง่าย
+       ไม่เขียนทับ localStorage จนกว่าผู้ใช้จะ Save */
+    if (record.typeId === "customer") {
+      record.originalTypeId = "customer";
+      record.typeId = "other";
+      if (!record.extra.eventName) record.extra.eventName = "เหตุเกี่ยวกับลูกค้า";
+    }
+    if (record.typeId === "staff") {
+      record.originalTypeId = "staff";
+      record.typeId = "other";
+      if (!record.extra.eventName) record.extra.eventName = "เหตุเกี่ยวกับพนักงาน";
+    }
+    /* typeId ที่ไม่รู้จักอื่น ๆ (ไม่ใช่ legacy "fall"/"customer"/"staff" ซึ่งจัดการไปแล้วด้านบน)
+       -> migrate เป็น "other" ใน memory ให้ UI (showForm) และ ReportGenerator (BUILDERS.other)
+       ใช้ typeId เดียวกัน ไม่เขียนทับ localStorage จนกว่าจะ Save */
     if (record.typeId !== "other" && global.IncidentTypes && !global.IncidentTypes.getType(record.typeId)) {
       record.originalTypeId = record.typeId;
       record.typeId = "other";
@@ -1090,13 +1085,23 @@ body.has-actions{padding-bottom:90px;}
   var IT = null; // lazy bind to window.IncidentTypes เพื่อดึง option label
   function opts() { return IT || (IT = global.IncidentTypes); }
 
-  /* แผนก/ฝ่าย (พนักงาน) หรือ ชื่อร้านค้า (ร้านค้าเช่า) ของ personType — ใช้ร่วมหลายประเภทเหตุการณ์ */
+  /* วลีธรรมชาติของประเภทบุคคลสำหรับใช้ในประโยครายงาน (ต่างจาก label ใน dropdown ที่อ้างถึงหมวดหมู่ร้านค้า
+     เช่น dropdown แสดง "ร้านค้าเช่า" แต่ในประโยครายงานต้องอ่านเป็น "พนักงานร้านค้าเช่า" จึงจะเป็นธรรมชาติ) */
+  function personNarrativeLabel(personType) {
+    if (personType === "tenant") return "พนักงานร้านค้าเช่า";
+    return optLabel(opts().PERSON_TYPE_OPTIONS, personType);
+  }
+
+  /* แผนก/ฝ่าย (พนักงาน), ชื่อร้านค้า (ร้านค้าเช่า), เบอร์โทร (ลูกค้า) ของ personType — ใช้ร่วมหลายประเภทเหตุการณ์ */
   function personDetailClause(e) {
     if (e.personType === "staff") {
       return joinClauses([has(e.department) ? "แผนก " + e.department : "", has(e.division) ? "ฝ่าย " + e.division : ""]);
     }
     if (e.personType === "tenant") {
       return has(e.shopName) ? "ร้านค้า " + e.shopName : "";
+    }
+    if (e.personType === "customer") {
+      return has(e.personPhone) ? "เบอร์ติดต่อ " + e.personPhone : "";
     }
     return "";
   }
@@ -1140,7 +1145,7 @@ body.has-actions{padding-bottom:90px;}
   var BUILDERS = {
 
     accident: function (e) {
-      var personLabel = optLabel(opts().PERSON_TYPE_OPTIONS, e.personType);
+      var personLabel = personNarrativeLabel(e.personType);
       var atLabel = optLabel([
         { value: "fall", label: "หกล้ม" }, { value: "dropped_on", label: "ของตกใส่" },
         { value: "sharp", label: "ถูกของมีคม" }, { value: "pinched", label: "ถูกอุปกรณ์หนีบ" },
@@ -1176,7 +1181,7 @@ body.has-actions{padding-bottom:90px;}
     patient: function (e, c) {
       c = c || {};
       var isStaff = e.personType === "staff";
-      var personLabel = optLabel(opts().PERSON_TYPE_OPTIONS, e.personType);
+      var personLabel = personNarrativeLabel(e.personType);
       var genderLabel = optLabel(opts().GENDER_OPTIONS, e.gender);
 
       var hasDept = isStaff && has(e.department);
@@ -1197,9 +1202,7 @@ body.has-actions{padding-bottom:90px;}
         personClause,
         has(genderLabel) ? "เพศ" + genderLabel : "",
         has(e.approxAge) ? "อายุ " + e.approxAge + " ปี" : "",
-        isStaff && has(e.department) ? "ปฏิบัติงานแผนก " + e.department : "",
-        isStaff && has(e.division) ? "ฝ่าย " + e.division : "",
-        !isStaff && e.personType === "tenant" ? personDetailClause(e) : "",
+        personDetailClause(e),
         has(e.symptoms) ? "มีอาการ" + e.symptoms : "",
         has(consLabel) ? "ระดับอาการ" + consLabel : ""
       ]);
@@ -1313,8 +1316,12 @@ body.has-actions{padding-bottom:90px;}
       if (e.personType === "staff") {
         disciplineLabel = e.discipline === "other" ? e.disciplineOther : optLabel(opts().DISCIPLINE_OPTIONS, e.discipline);
       }
+      /* ไม่ auto-แทรก personLabel ในย่อหน้า: field "ผู้เกี่ยวข้อง / คู่กรณี" เป็น free text ที่ผู้ใช้มักพิมพ์
+         ประเภทบุคคลรวมอยู่แล้ว (เช่น "พนักงาน 2 คนทะเลาะกัน") การแทรกซ้ำจะขัดกับกฎห้ามเขียนประเภทบุคคลซ้ำ
+         คง personDetailClause ไว้เพราะเป็นข้อมูลใหม่ (แผนก/ฝ่าย/ร้านค้า/เบอร์โทร) ที่ไม่ได้อยู่ใน free text */
       var findings = joinClauses([
         has(e.parties) ? "ผู้เกี่ยวข้อง " + e.parties : "",
+        personDetailClause(e),
         has(e.cause) ? "สาเหตุเบื้องต้น " + e.cause : "",
         yn(e.hasCCTV, "มีกล้องวงจรปิดบันทึกภาพไว้", "ไม่มีกล้องวงจรปิด")
       ]);
@@ -1328,47 +1335,19 @@ body.has-actions{padding-bottom:90px;}
     },
 
     property_damage: function (e) {
+      var personLabel = personNarrativeLabel(e.personType);
       return {
         desc: "พบทรัพย์สินเสียหาย",
         findings: joinClauses([
           has(e.asset) ? "ทรัพย์สินที่เสียหายคือ" + e.asset : "",
-          has(e.damage) ? "ลักษณะความเสียหาย " + e.damage : ""
+          has(e.damage) ? "ลักษณะความเสียหาย " + e.damage : "",
+          has(e.involvedName) ? "ผู้เกี่ยวข้องคือ" + e.involvedName + (has(personLabel) ? " เป็น" + personLabel : "") : (personLabel ? "ผู้เกี่ยวข้องเป็น" + personLabel : ""),
+          personDetailClause(e)
         ]),
         actions: has(e.action) ? e.action : "",
         impact: "",
         cause: e.cause,
         causeApplicable: true
-      };
-    },
-
-    customer: function (e) {
-      var issueLabel = e.issueType === "other" ? e.issueTypeOther : optLabel(opts().CUSTOMER_ISSUE_OPTIONS, e.issueType);
-      return {
-        desc: has(issueLabel) ? "เหตุเกี่ยวกับลูกค้า ประเภท" + issueLabel : "เหตุเกี่ยวกับลูกค้า",
-        findings: joinClauses([
-          has(e.customerName) ? "ลูกค้าชื่อ" + e.customerName + (has(e.customerPhone) ? " เบอร์ติดต่อ " + e.customerPhone : "") : "",
-          has(e.issue) ? e.issue : ""
-        ]),
-        actions: joinClauses([
-          has(e.action) ? e.action : "",
-          has(e.resultText) ? "ผลการดำเนินการ " + e.resultText : ""
-        ]),
-        impact: "",
-        cause: null, causeApplicable: false
-      };
-    },
-
-    staff: function (e) {
-      return {
-        desc: "เหตุเกี่ยวกับพนักงาน",
-        findings: joinClauses([
-          has(e.staffName) ? "พนักงานชื่อ" + e.staffName : "",
-          has(e.department) ? "ปฏิบัติงาน" + e.department : "",
-          has(e.issue) ? e.issue : ""
-        ]),
-        actions: has(e.action) ? e.action : "",
-        impact: "",
-        cause: null, causeApplicable: false
       };
     },
 
@@ -1391,7 +1370,7 @@ body.has-actions{padding-bottom:90px;}
 
     dropped: function (e) {
       var groupLabel = e.productGroup === "other" ? e.productGroupOther : optLabel(opts().PRODUCT_GROUP_OPTIONS, e.productGroup);
-      var personLabel = optLabel(opts().PERSON_TYPE_OPTIONS, e.personType);
+      var personLabel = personNarrativeLabel(e.personType);
       return {
         desc: "สินค้า/ทรัพย์สินเสียหายหรือร่วงหล่น",
         findings: joinClauses([
@@ -1411,10 +1390,13 @@ body.has-actions{padding-bottom:90px;}
     },
 
     suspicious: function (e) {
+      var personLabel = personNarrativeLabel(e.personType);
       return {
         desc: "พบบุคคลต้องสงสัย",
         findings: joinClauses([
           has(e.description) ? "ลักษณะบุคคล " + e.description : "",
+          has(personLabel) ? "เป็น" + personLabel : "",
+          personDetailClause(e),
           has(e.behavior) ? "พบพฤติกรรม " + e.behavior : "",
           yn(e.hasCCTV, "มีกล้องวงจรปิดบันทึกภาพไว้", "ไม่มีกล้องวงจรปิด")
         ]),
@@ -1452,7 +1434,7 @@ body.has-actions{padding-bottom:90px;}
     },
 
     theft: function (e) {
-      var personLabel = optLabel(opts().PERSON_TYPE_OPTIONS, e.personType);
+      var personLabel = personNarrativeLabel(e.personType);
       var admitLabel = optLabel([{ value: "admit", label: "ยอมรับการกระทำ" }, { value: "deny", label: "ปฏิเสธการกระทำ" }], e.admitOrDeny);
       var findings = joinClauses([
         has(personLabel) ? "ผู้ก่อเหตุเป็น" + personLabel : "",
