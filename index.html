@@ -259,6 +259,9 @@ body.has-actions{padding-bottom:90px;}
     <div class="typegrid" id="homeTypegrid"></div>
     <div class="section-title">เหตุการณ์ล่าสุด</div>
     <div class="inclist" id="homeRecent"><div class="empty">ยังไม่มีรายการ</div></div>
+    <div class="btns">
+      <button class="btn danger" id="btnResetAll">ล้างข้อมูลทั้งหมดในแอป</button>
+    </div>
   </div>
 
   <!-- SCREEN: REPORT -->
@@ -979,6 +982,19 @@ body.has-actions{padding-bottom:90px;}
     return writeList(list);
   }
 
+  /* ล้างข้อมูลทั้งหมดในแอปแบบถาวร (ผู้ใช้เลือกเองผ่านปุ่มบนหน้าแรก + ยืนยันชัดเจนก่อนเสมอ)
+     ลบรายการเหตุการณ์ทั้งหมด, ตัวนับเลขอ้างอิงรายวันทุกวัน และฉบับร่างที่ค้างอยู่ */
+  function clearAll() {
+    try {
+      localStorage.removeItem(LIST_KEY);
+      for (var i = localStorage.length - 1; i >= 0; i--) {
+        var key = localStorage.key(i);
+        if (key && key.indexOf(COUNTER_PREFIX) === 0) localStorage.removeItem(key);
+      }
+    } catch (e) {}
+    clearDraft();
+  }
+
   /* คัดลอกเหตุการณ์เป็นฉบับร่างใหม่ (ยังไม่มี id จนกว่าจะบันทึก) */
   function duplicate(id) {
     var src = getById(id);
@@ -1014,6 +1030,7 @@ body.has-actions{padding-bottom:90px;}
     update: update,
     remove: remove,
     duplicate: duplicate,
+    clearAll: clearAll,
     nextId: nextId,
     saveDraft: saveDraft,
     loadDraft: loadDraft,
@@ -1630,6 +1647,14 @@ var HomeScreen = (function(){
       recentBox.innerHTML = "<div class='empty'>ยังไม่มีรายการ</div>";
     }
   }
+  $("btnResetAll").addEventListener("click", function(){
+    var count = Storage.all().length;
+    if(!count){ App.toast("ไม่มีข้อมูลให้ล้าง"); return; }
+    if(!confirm("ล้างข้อมูลทั้งหมดในแอปถาวร?\n\nรายงานที่บันทึกไว้ทั้งหมด "+count+" รายการจะถูกลบออกจากเครื่องนี้ และกู้คืนไม่ได้")) return;
+    Storage.clearAll();
+    render();
+    App.toast("ล้างข้อมูลทั้งหมดแล้ว");
+  });
   return { render: render };
 })();
 
