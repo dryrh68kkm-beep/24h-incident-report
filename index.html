@@ -167,7 +167,7 @@ input[type=date],input[type=time]{
 .btn.quiet{background:transparent;border-color:transparent;color:var(--muted);}
 .dashed{width:100%;padding:13px;border:1.5px dashed var(--border);border-radius:10px;background:transparent;color:var(--navy);font-size:13.5px;font-weight:600;cursor:pointer;margin-top:10px;}
 
-.formtop{margin:10px 0 4px;}
+.formtop{margin:10px 0 4px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
 .formtop .btn.quiet{width:auto;flex:none;padding:6px 2px;color:var(--navy);font-size:13.5px;font-weight:700;}
 
 /* fixed bottom action bar */
@@ -249,18 +249,17 @@ body.has-actions{padding-bottom:90px;}
       <div class="steps"><i class="on"></i><i></i></div>
       <div class="formtop">
         <button class="btn quiet" id="btnChangeType">← เปลี่ยนประเภท</button>
+        <button type="button" class="clearbtn" id="btnClearAll">ล้างข้อมูลทั้งหมด</button>
       </div>
       <div class="card">
         <div class="cardhead">
           <h2>ข้อมูลพื้นฐาน<span class="sub">ทุกประเภทเหตุการณ์ต้องกรอก</span></h2>
-          <button type="button" class="clearbtn" id="btnClearCore">ล้างข้อมูล</button>
         </div>
         <div id="coreFields"></div>
       </div>
       <div class="card" id="recipientsCard">
         <div class="cardhead">
           <h2>ผู้รับทราบเหตุการณ์<span class="sub">เพิ่มได้มากกว่า 1 คน เช่น SGM, Manager, OSX Duty</span></h2>
-          <button type="button" class="clearbtn" id="btnClearRecipients">ล้างข้อมูล</button>
         </div>
         <div id="recipientsList"></div>
         <button type="button" class="dashed" id="btnAddRecipient">+ เพิ่มผู้รับทราบ</button>
@@ -268,7 +267,6 @@ body.has-actions{padding-bottom:90px;}
       <div class="card" id="extraCard" style="display:none">
         <div class="cardhead">
           <h2 id="extraTitle">รายละเอียดเฉพาะเหตุการณ์</h2>
-          <button type="button" class="clearbtn" id="btnClearExtra">ล้างข้อมูล</button>
         </div>
         <div id="extraFields"></div>
       </div>
@@ -1659,14 +1657,6 @@ var ReportScreen = (function(){
     autosave();
     renderRecipients();
   });
-  $("btnClearRecipients").addEventListener("click", function(){
-    if(!confirm("ล้างข้อมูลผู้รับทราบเหตุการณ์ทั้งหมด?")) return;
-    record.core.recipients = [];
-    autosave();
-    renderRecipients();
-    App.toast("ล้างข้อมูลหมวดนี้แล้ว");
-  });
-
   function showForm(tId){
     /* กัน crash ถ้า typeId เก่า/ไม่รู้จักไม่มี typeDef (เช่นข้อมูลเก่าที่ยังไม่ได้ migrate) -> ใช้หน้าตาของ "อื่น ๆ" แทน
        โดยไม่เปลี่ยน record.typeId เดิม เพื่อไม่ให้ข้อมูล metadata หาย */
@@ -1710,20 +1700,13 @@ var ReportScreen = (function(){
 
   $("btnChangeType").addEventListener("click", function(){ showPicker(); });
 
-  $("btnClearCore").addEventListener("click", function(){
-    if(!confirm("ล้างข้อมูลในหมวด \"ข้อมูลพื้นฐาน\" ทั้งหมด?")) return;
-    var keepRecipients = record.core.recipients;
-    record.core = { recipients: keepRecipients };
-    autosave();
-    showForm(record.typeId);
-    App.toast("ล้างข้อมูลหมวดนี้แล้ว");
-  });
-  $("btnClearExtra").addEventListener("click", function(){
-    if(!confirm("ล้างข้อมูลในหมวด \"รายละเอียดเฉพาะเหตุการณ์\" ทั้งหมด?")) return;
+  $("btnClearAll").addEventListener("click", function(){
+    if(!confirm("ล้างข้อมูลในฟอร์มนี้ทั้งหมด (ข้อมูลพื้นฐาน, ผู้รับทราบเหตุการณ์, รายละเอียดเฉพาะเหตุการณ์)?")) return;
+    record.core = {};
     record.extra = {};
     autosave();
     showForm(record.typeId);
-    App.toast("ล้างข้อมูลหมวดนี้แล้ว");
+    App.toast("ล้างข้อมูลทั้งหมดแล้ว");
   });
 
   $("btnToPreview").addEventListener("click", function(){
